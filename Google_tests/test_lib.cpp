@@ -16,7 +16,13 @@ protected:
         "../../media/test_media/videos/image_sequences/small_dog_001/small_dog_001_%04d.png";
 
     std::filesystem::path bad_small_dog_seq_path =
-    "../../media/test_media/videos/image_sequences/small_cat_001/small_dog_001_%04d.png";
+        "../../media/test_media/videos/image_sequences/small_cat_001/small_dog_001_%04d.png";
+
+    std::filesystem::path small_dog_seq_no_framepadding =
+        "../../media/test_media/videos/image_sequences/small_dog_001/small_dog_001.png";
+
+    std::filesystem::path small_dog_seq_name_doesnt_exist =
+        "../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.png";
 
     Quest::ImageSeq dog_seq;
 };
@@ -68,9 +74,23 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     ASSERT_EQ(seq.get_frame_count(), 187);
 }
 
-TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFail) {
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
     Quest::ImageSeq seq;
     ASSERT_FALSE(seq.open(bad_small_dog_seq_path));
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
+    Quest::ImageSeq seq;
+    ASSERT_FALSE(seq.open(small_dog_seq_no_framepadding));
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
+    Quest::ImageSeq seq;
+    ASSERT_FALSE(seq.open(small_dog_seq_name_doesnt_exist));
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
 }

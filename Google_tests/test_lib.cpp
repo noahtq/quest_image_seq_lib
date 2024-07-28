@@ -27,6 +27,8 @@ protected:
     Quest::ImageSeq dog_seq;
 };
 
+// --- ImageSeq Tests ---
+
 // Test the basic getters that are returing simple data types
 TEST_F(ImageSeqLibTest, TestImageSeqBasicGetters) {
     ASSERT_EQ(dog_seq.get_input_path(), small_dog_seq_path);
@@ -116,4 +118,71 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
     ASSERT_THROW(dog_seq[-1], std::out_of_range);
     ASSERT_THROW(dog_seq[200], std::out_of_range);
+}
+
+// --- SeqPath Tests ---
+TEST_F(ImageSeqLibTest, TestSeqPathoutputPath) {
+    const Quest::SeqPath output_seq("small_dog_%04d.jpg");
+    ASSERT_EQ(output_seq.outputPath(), "small_dog_0001.jpg");
+}
+
+TEST_F(ImageSeqLibTest, TestSeqPathConstructorSuccess) {
+    std::filesystem::path short_path = "small_dog_001_%04d.png";
+    std::filesystem::path full_path = "../dog/cat/small_dog_001_%04d.png";
+    std::filesystem::path start_with_padding = "%04d_small_dog_001.png";
+    std::filesystem::path padding_middle = "small_%04d_dog_001.png";
+    std::filesystem::path short_padding = "small_dog_001_%00d.png";
+    std::filesystem::path lots_of_padding = "small_dog_001_%31d.png";
+
+    Quest::SeqPath output_seq(short_path);
+    ASSERT_EQ(output_seq.get_input_path(), short_path);
+    ASSERT_EQ(output_seq.outputPath(), "small_dog_001_0001.png");
+
+    Quest::SeqPath output_seq_full(full_path);
+    ASSERT_EQ(output_seq_full.get_input_path(), full_path);
+    ASSERT_EQ(output_seq_full.outputPath(), "../dog/cat/small_dog_001_0001.png");
+
+    Quest::SeqPath output_seq_start(start_with_padding);
+    ASSERT_EQ(output_seq_start.get_input_path(), start_with_padding);
+    ASSERT_EQ(output_seq_start.outputPath(), "0001_small_dog_001.png");
+
+    Quest::SeqPath output_seq_middle(padding_middle);
+    ASSERT_EQ(output_seq_middle.get_input_path(), padding_middle);
+    ASSERT_EQ(output_seq_middle.outputPath(), "small_0001_dog_001.png");
+
+    Quest::SeqPath output_seq_short_padding(short_padding);
+    ASSERT_EQ(output_seq_short_padding.get_input_path(), short_padding);
+    ASSERT_EQ(output_seq_short_padding.outputPath(), "small_dog_001_1.png");
+
+    Quest::SeqPath output_seq_long_padding(lots_of_padding);
+    ASSERT_EQ(output_seq_long_padding.get_input_path(), lots_of_padding);
+    ASSERT_EQ(output_seq_long_padding.outputPath(), "small_dog_001_0000000000000000000000000000001.png");
+}
+
+TEST_F(ImageSeqLibTest, TestSeqPathConstructorNoPadding) {
+    ASSERT_THROW(new Quest::SeqPath("small_dog_0001.png"), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestSeqPathConstructorMultiplePadding) {
+    ASSERT_THROW(new Quest::SeqPath("small_dog_0001_%04d_%04d.png"), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {
+    Quest::SeqPath output_seq("small_dog_%04d.png");
+    Quest::SeqPath output_seq_short("small_dog_%00d.png");
+    Quest::SeqPath output_seq_long("small_dog_%15d.png");
+
+    for (int i = 1; i < 500; i++) {
+        std::stringstream ss_norm;
+        std::stringstream ss_short;
+        std::stringstream ss_long;
+
+        ss_norm << "small_dog_" << std::setfill('0') << std::setw(4) << i << ".png";
+        ss_short << "small_dog_" << i << ".png";
+        ss_long << "small_dog_" << std::setfill('0') << std::setw(15) << i << ".png";
+
+        ASSERT_EQ(output_seq.outputIncrement(), ss_norm.str());
+        ASSERT_EQ(output_seq_short.outputIncrement(), ss_short.str());
+        ASSERT_EQ(output_seq_long.outputIncrement(), ss_long.str());
+    }
 }

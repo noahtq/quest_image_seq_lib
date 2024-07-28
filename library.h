@@ -5,6 +5,36 @@
 #include <opencv2/opencv.hpp>
 
 namespace Quest {
+    class SeqException: public std::exception {
+        std::string message;
+    public:
+        explicit SeqException(const char* msg)
+            : message(msg) {}
+
+        [[nodiscard]] const char* what() const throw() {
+            return message.c_str();
+        }
+    };
+
+    class SeqPath {
+        std::filesystem::path input_path;
+        std::string pre_frame;
+        int current_frame = -1;
+        std::string post_frame;
+        int padding = -1;
+
+    public:
+        // Constructors
+        explicit SeqPath(const std::filesystem::path& new_input_path);
+
+        // Getters and setters
+        [[nodiscard]] std::filesystem::path get_input_path() const { return input_path; }
+
+        // Methods
+        [[nodiscard]] std::string outputPath() const;
+        std::string outputIncrement();
+    };
+
     class ImageSeq {
         std::filesystem::path input_path = "";
         std::filesystem::path output_path = "";
@@ -27,6 +57,7 @@ namespace Quest {
 
         // Image IO
         bool open(const std::filesystem::path& new_input_path);
+        bool render(const std::filesystem::path& new_output_path);
     };
 }
 

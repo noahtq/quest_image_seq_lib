@@ -22,6 +22,9 @@ namespace Quest {
         [[nodiscard]] cv::Mat get_frame(const int& i) const { return frames[i]; }
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
 
+        // Operators
+        cv::Mat& operator[](const int& index);
+
         // Image IO
         bool open(const std::filesystem::path& new_input_path);
     };

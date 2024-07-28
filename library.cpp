@@ -18,3 +18,11 @@ bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
     return true;
 }
 
+cv::Mat& Quest::ImageSeq::operator[](const int& index) {
+    if (index >= frames.size() || index < 0) {
+        throw std::out_of_range("Attempting to access a frame in ImageSeq object that doesn't exist");
+    }
+    return frames[index];
+}
+
+

@@ -94,3 +94,26 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
 }
+
+TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {
+    cv::Mat test_frame = dog_seq[20];
+    GaussianBlur(test_frame, test_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
+    ASSERT_TRUE((sum(test_frame != dog_seq.get_frame(20)) == cv::Scalar(0, 0, 0, 0)));
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
+    cv::Mat new_frame = cv::imread("../../media/test_media/images/house_roof.jpg");
+
+    // Test that the new Mat is assigned correctly to frame 100 in the image sequence
+    dog_seq.set_frame(50, new_frame);
+    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+
+    // Test that both Mats reference the same memory on the heap
+    GaussianBlur(new_frame, new_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
+    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
+    ASSERT_THROW(dog_seq[-1], std::out_of_range);
+    ASSERT_THROW(dog_seq[200], std::out_of_range);
+}

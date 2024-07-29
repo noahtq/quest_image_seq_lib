@@ -59,6 +59,12 @@ namespace Quest {
         [[nodiscard]] cv::Mat get_frame(const int& i) const { return frames[i]; }
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
 
+        // Iterators
+        std::vector<cv::Mat>::iterator begin() { return frames.begin(); }
+        std::vector<cv::Mat>::iterator end() { return frames.end(); }
+        [[nodiscard]] std::vector<cv::Mat>::const_iterator begin() const { return frames.begin(); }
+        [[nodiscard]] std::vector<cv::Mat>::const_iterator end() const { return frames.end(); }
+
         // Operators
         cv::Mat& operator[](const int& index);
 

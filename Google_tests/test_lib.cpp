@@ -11,6 +11,7 @@ class ImageSeqLibTest : public testing::Test {
 protected:
     void SetUp() override {
         dog_seq.open(small_dog_seq_path);
+        dog_blurred.open(small_dog_blurred_path);
         output_seq = new Quest::SeqPath(small_dog_output_path);
         new_frame = cv::imread(house_picture_path);
         test_seq = new Quest::SeqPath("small_dog_%04d.png");
@@ -43,9 +44,13 @@ protected:
 
     std::filesystem::path house_picture_path = "../../media/test_media/images/house_roof.jpg";
 
+    std::filesystem::path small_dog_blurred_path =
+        "../../media/test_media/videos/image_sequences/small_dog_001_blurred/small_dog_001_blurred_%04d.png";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
+    Quest::ImageSeq dog_blurred;
 
     Quest::SeqPath *output_seq = nullptr;
     Quest::SeqPath *test_seq = nullptr;
@@ -166,6 +171,21 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderNonExistentDirectory) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
     ASSERT_FALSE(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"));
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
+    // Test const iterators
+    for (const cv::Mat& frame : dog_seq) {
+        ASSERT_EQ(frame.rows, 1920);
+    }
+
+    for (cv::Mat& frame : dog_seq) {
+        GaussianBlur(frame, frame, cv::Size(25, 25), 0, 0, cv::BORDER_CONSTANT);
+    }
+
+    for (int i = 0; i < 187; i++) {
+        ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
+    }
 }
 
 // --- SeqPath Tests ---

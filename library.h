@@ -47,6 +47,8 @@ namespace Quest {
         std::filesystem::path output_path = "";
         std::vector<cv::Mat> frames;
         int frame_count = -1;
+        int width = -1;
+        int height = -1;
 
     public:
         // Constructors
@@ -58,6 +60,8 @@ namespace Quest {
         [[nodiscard]] int get_frame_count() const { return frame_count; }
         [[nodiscard]] cv::Mat get_frame(const int& i) const { return frames[i]; }
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
+        [[nodiscard]] int get_width() const { return width; }
+        [[nodiscard]] int get_height() const { return height; }
 
         // Iterators
         std::vector<cv::Mat>::iterator begin() { return frames.begin(); }

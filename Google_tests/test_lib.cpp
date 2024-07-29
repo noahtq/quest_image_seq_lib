@@ -63,6 +63,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqBasicGetters) {
     ASSERT_EQ(dog_seq.get_input_path(), small_dog_seq_path);
     ASSERT_EQ(dog_seq.get_output_path(), "");
     ASSERT_EQ(dog_seq.get_frame_count(), 187);
+    ASSERT_EQ(dog_seq.get_width(), 1080);
+    ASSERT_EQ(dog_seq.get_height(), 1920);
 }
 
 // Test the frame getter. A bit more complex as it should be returning a copy
@@ -94,6 +96,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_output_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
@@ -101,6 +105,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     ASSERT_TRUE(seq.open(small_dog_seq_path));
     ASSERT_EQ(seq.get_input_path(), small_dog_seq_path);
     ASSERT_EQ(seq.get_frame_count(), 187);
+    ASSERT_EQ(dog_seq.get_width(), 1080);
+    ASSERT_EQ(dog_seq.get_height(), 1920);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
@@ -108,6 +114,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
     ASSERT_FALSE(seq.open(bad_small_dog_seq_path));
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
@@ -115,6 +123,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
     ASSERT_FALSE(seq.open(small_dog_seq_no_framepadding));
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
@@ -122,6 +132,8 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
     ASSERT_FALSE(seq.open(small_dog_seq_name_doesnt_exist));
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);;
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {

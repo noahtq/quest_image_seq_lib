@@ -49,6 +49,8 @@ bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
         input_video >> frames[i];
     }
     frame_count = i;
+    width = frames[0].cols;
+    height = frames[0].rows;
     return true;
 }
 

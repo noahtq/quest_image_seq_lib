@@ -14,3 +14,7 @@ but you also retain all of the functionality that is offered by OpenCV.
 - [OpenCV](https://opencv.org/)
 - [GTest for Unit Testing](https://github.com/google/googletest)
 - Developed in CLion
+
+## Building and Using Library
+Note that in order to run benchmarks you must follow the instructions [here](https://github.com/google/benchmark)
+to build the Google_benchmark library for your own system.

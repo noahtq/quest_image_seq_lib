@@ -10,3 +10,4 @@ add_library(quest_image_seq_lib STATIC library.cpp)
 target_link_libraries(quest_image_seq_lib ${OpenCV_LIBS})
 
 add_subdirectory(Google_tests)
+add_subdirectory(Google_benchmark)

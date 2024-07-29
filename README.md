@@ -11,6 +11,6 @@ but you also retain all of the functionality that is offered by OpenCV.
 
 ## Tech Stack
 - C++ and CMake
-- OpenCV
-- GTest for Unit Testing
+- [OpenCV](https://opencv.org/)
+- [GTest for Unit Testing](https://github.com/google/googletest)
 - Developed in CLion

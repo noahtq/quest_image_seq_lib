@@ -12,6 +12,8 @@ protected:
     void SetUp() override {
         dog_seq.open(small_dog_seq_path);
         output_seq = new Quest::SeqPath(small_dog_output_path);
+        new_frame = cv::imread(house_picture_path);
+        test_seq = new Quest::SeqPath("small_dog_%04d.png");
     }
 
     void TearDown() override {
@@ -39,9 +41,14 @@ protected:
     std::filesystem::path small_dog_seq_name_doesnt_exist =
         "../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.png";
 
+    std::filesystem::path house_picture_path = "../../media/test_media/images/house_roof.jpg";
+
+    cv::Mat new_frame;
+
     Quest::ImageSeq dog_seq;
 
     Quest::SeqPath *output_seq = nullptr;
+    Quest::SeqPath *test_seq = nullptr;
 };
 
 // --- ImageSeq Tests ---
@@ -68,8 +75,6 @@ TEST_F(ImageSeqLibTest, TestImageSeqFrameGetter) {
 // cv::Mat should all be referencing the same memory on the heap, so changes made
 // to either should affect both
 TEST_F(ImageSeqLibTest, TestImageSeqFrameSetter) {
-    cv::Mat new_frame = cv::imread("../../media/test_media/images/house_roof.jpg");
-
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(100, new_frame);
     ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(100)) == cv::Scalar(0, 0, 0, 0)));
@@ -121,7 +126,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
-    cv::Mat new_frame = cv::imread("../../media/test_media/images/house_roof.jpg");
+
 
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(50, new_frame);
@@ -165,8 +170,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
 
 // --- SeqPath Tests ---
 TEST_F(ImageSeqLibTest, TestSeqPathoutputPath) {
-    const Quest::SeqPath output_seq("small_dog_%04d.jpg");
-    ASSERT_EQ(output_seq.outputPath(), "small_dog_0001.jpg");
+    ASSERT_EQ(test_seq->outputPath(), "small_dog_0001.png");
 }
 
 TEST_F(ImageSeqLibTest, TestSeqPathConstructorSuccess) {
@@ -211,11 +215,10 @@ TEST_F(ImageSeqLibTest, TestSeqPathConstructorMultiplePadding) {
 }
 
 TEST_F(ImageSeqLibTest, TestSeqPathIncrement) {
-    ASSERT_EQ(output_seq->increment(), 2);
+    ASSERT_EQ(test_seq->increment(), 2);
 }
 
 TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {
-    Quest::SeqPath output_seq("small_dog_%04d.png");
     Quest::SeqPath output_seq_short("small_dog_%00d.png");
     Quest::SeqPath output_seq_long("small_dog_%15d.png");
 
@@ -228,7 +231,7 @@ TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {
         ss_short << "small_dog_" << i << ".png";
         ss_long << "small_dog_" << std::setfill('0') << std::setw(15) << i << ".png";
 
-        ASSERT_EQ(output_seq.outputIncrement(), ss_norm.str());
+        ASSERT_EQ(test_seq->outputIncrement(), ss_norm.str());
         ASSERT_EQ(output_seq_short.outputIncrement(), ss_short.str());
         ASSERT_EQ(output_seq_long.outputIncrement(), ss_long.str());
     }

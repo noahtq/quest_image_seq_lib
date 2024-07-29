@@ -53,6 +53,26 @@ bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
 }
 
 bool Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
+    if (frames.empty()) {
+        throw SeqException("Attempting to render image sequence before images have been opened.");
+    }
+
+    if (!is_directory(new_output_path.parent_path())) {
+        return false;
+    }
+
+    const std::string extension = new_output_path.extension();
+    for (const std::string& valid : supported_image_extensions) {
+        if (extension == valid) {
+            Quest::SeqPath output_seq(new_output_path);
+            output_path = new_output_path;
+            for (const cv::Mat& frame : frames) {
+                std::filesystem::path frame_output_path = output_seq.outputIncrement();
+                cv::imwrite(frame_output_path, frame);
+            }
+            return true;
+        }
+    }
     return false;
 }
 

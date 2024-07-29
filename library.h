@@ -5,6 +5,12 @@
 #include <opencv2/opencv.hpp>
 
 namespace Quest {
+    inline const std::vector<std::string> supported_image_extensions = {
+        ".png",
+        ".jpg",
+        ".jpeg"
+    };
+
     class SeqException: public std::exception {
         std::string message;
     public:
@@ -32,6 +38,7 @@ namespace Quest {
 
         // Methods
         [[nodiscard]] std::string outputPath() const;
+        int increment() { return ++current_frame; }
         std::string outputIncrement();
     };
 

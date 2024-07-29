@@ -2,6 +2,7 @@
 // Created by Noah Turnquist on 7/22/24.
 //
 
+#include <fstream>
 #include "gtest/gtest.h"
 #include <opencv2/opencv.hpp>
 #include "../library.h"
@@ -10,10 +11,24 @@ class ImageSeqLibTest : public testing::Test {
 protected:
     void SetUp() override {
         dog_seq.open(small_dog_seq_path);
+        output_seq = new Quest::SeqPath(small_dog_output_path);
+    }
+
+    void TearDown() override {
+        Quest::SeqPath teardown_output_seq(small_dog_output_path);
+        for (int i = 1; i < 188; i++) {
+            if (std::ifstream(teardown_output_seq.outputPath())) {
+                std::filesystem::remove(teardown_output_seq.outputPath());
+            }
+            teardown_output_seq.increment();
+        }
     }
 
     std::filesystem::path small_dog_seq_path =
         "../../media/test_media/videos/image_sequences/small_dog_001/small_dog_001_%04d.png";
+
+    std::filesystem::path small_dog_output_path =
+    "../../media/test_media/videos/image_sequences/small_dog_001_rendered/small_dog_001_%04d.png";
 
     std::filesystem::path bad_small_dog_seq_path =
         "../../media/test_media/videos/image_sequences/small_cat_001/small_dog_001_%04d.png";
@@ -25,6 +40,8 @@ protected:
         "../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.png";
 
     Quest::ImageSeq dog_seq;
+
+    Quest::SeqPath *output_seq = nullptr;
 };
 
 // --- ImageSeq Tests ---
@@ -120,6 +137,32 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
     ASSERT_THROW(dog_seq[200], std::out_of_range);
 }
 
+TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
+    ASSERT_TRUE(dog_seq.render(small_dog_output_path));
+    ASSERT_EQ(dog_seq.get_output_path(), small_dog_output_path);
+    for(int i = 1; i < 188; i++) {
+        std::ifstream ifs(output_seq->outputPath());
+        ASSERT_TRUE(ifs);
+        cv::Mat rendered_frame;
+        rendered_frame = cv::imread(output_seq->outputPath());
+        ASSERT_TRUE((sum(rendered_frame != dog_seq.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0)));
+        output_seq->increment();
+    }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderNoFrames) {
+    Quest::ImageSeq empty_seq;
+    ASSERT_THROW(empty_seq.render(small_dog_output_path), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderNonExistentDirectory) {
+    ASSERT_FALSE(dog_seq.render("../fake_dir/dog_output_%04d.png"));
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
+    ASSERT_FALSE(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"));
+}
+
 // --- SeqPath Tests ---
 TEST_F(ImageSeqLibTest, TestSeqPathoutputPath) {
     const Quest::SeqPath output_seq("small_dog_%04d.jpg");
@@ -165,6 +208,10 @@ TEST_F(ImageSeqLibTest, TestSeqPathConstructorNoPadding) {
 
 TEST_F(ImageSeqLibTest, TestSeqPathConstructorMultiplePadding) {
     ASSERT_THROW(new Quest::SeqPath("small_dog_0001_%04d_%04d.png"), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestSeqPathIncrement) {
+    ASSERT_EQ(output_seq->increment(), 2);
 }
 
 TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {

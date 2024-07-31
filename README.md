@@ -31,8 +31,8 @@ between all of the iterations to get the benchmark times.
 ### Reading an Image Sequence
 **Reading a 990 frame 1280x720 png image sequence**  
 - Time (for all operations): 3.75 seconds
-- CPU Time: 10.2 seconds
-- 
+- CPU Time: 10.2 seconds  
+
 **Rendering a 990 frame 1280x720 png image sequence**
 - Time (for all operations): 8.65 seconds
 - CPU Time: 32.2 seconds

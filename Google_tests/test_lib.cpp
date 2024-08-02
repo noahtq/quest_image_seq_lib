@@ -5,7 +5,7 @@
 #include <fstream>
 #include "gtest/gtest.h"
 #include <opencv2/opencv.hpp>
-#include "../library.h"
+#include "../quest_seq_lib.h"
 
 class ImageSeqLibTest : public testing::Test {
 protected:

@@ -4,7 +4,7 @@
 
 #include <fstream>
 #include <benchmark/benchmark.h>
-#include "../library.h"
+#include "../quest_seq_lib.h"
 
 // Image sequences used in benchmarks
 // 1. A 33 second long, 30 fps, 1280x720 image sequence of some waves

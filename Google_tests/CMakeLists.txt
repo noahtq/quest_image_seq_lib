@@ -8,8 +8,8 @@ include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
 
 add_executable(Google_Tests_run
         test_lib.cpp
-        ../library.cpp
-        ../library.h
+        ../quest_seq_lib.cpp
+        ../quest_seq_lib.h
 )
 
 target_link_libraries(Google_Tests_run ${OpenCV_LIBS})

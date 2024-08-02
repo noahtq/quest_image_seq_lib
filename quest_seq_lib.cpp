@@ -1,6 +1,6 @@
 #include <iostream>
 #include <regex>
-#include "library.h"
+#include "quest_seq_lib.h"
 
 Quest::SeqPath::SeqPath(const std::filesystem::path& new_input_path) {
     std::string path_string = new_input_path;

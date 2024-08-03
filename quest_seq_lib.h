@@ -6,9 +6,9 @@
 
 namespace Quest {
     inline const std::vector<std::string> supported_image_extensions = {
-        ".png",
-        ".jpg",
-        ".jpeg"
+        ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
+        ".webp", ".pbm", ".pgm", ".ppm", ".pnm", ".sr", ".ras",
+        ".tiff", ".tif", ".exr", ".hdr", ".pic"
     };
 
     class SeqException: public std::exception {

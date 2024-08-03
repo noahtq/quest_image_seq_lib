@@ -47,6 +47,9 @@ protected:
     std::filesystem::path small_dog_blurred_path =
         "../../media/test_media/videos/image_sequences/small_dog_001_blurred/small_dog_001_blurred_%04d.png";
 
+    std::filesystem::path dandelion_path =
+        "../../media/test_media/images/all_image_extensions/dandelion_%04d.jpg";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
@@ -197,6 +200,15 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
 
     for (int i = 0; i < 187; i++) {
         ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
+    }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
+    Quest::ImageSeq dandelion_seq;
+    dandelion_seq.open(dandelion_path);
+    for (auto extension : Quest::supported_image_extensions) {
+        auto output_path = dandelion_path.replace_extension(extension);
+        dandelion_seq.render(output_path);
     }
 }
 

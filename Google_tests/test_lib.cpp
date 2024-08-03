@@ -203,7 +203,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
     }
 }
 
+// TODO: Add test for opening video files
+
 TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
+    // Quest::SeqPath dande_seq_path(dandelion_path);
+    // cv::Mat dande = cv::imread(dandelion_path);
     Quest::ImageSeq dandelion_seq;
     dandelion_seq.open(dandelion_path);
     for (auto extension : Quest::supported_image_extensions) {

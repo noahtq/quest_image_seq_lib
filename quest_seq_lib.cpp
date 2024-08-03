@@ -1,5 +1,6 @@
 #include <iostream>
 #include <regex>
+#include <fstream>
 #include "quest_seq_lib.h"
 
 Quest::SeqPath::SeqPath(const std::filesystem::path& new_input_path) {
@@ -36,19 +37,43 @@ std::string Quest::SeqPath::outputIncrement() {
 }
 
 bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
-    cv::VideoCapture input_video;
-    input_video.open(new_input_path, cv::CAP_IMAGES);
-    if (!input_video.isOpened()) {
-        return false;
+    try {
+        SeqPath input_seq_path(new_input_path);
+        // Verify that the first frame exists at path
+        std::ifstream ifs(input_seq_path.outputPath());
+        if (!ifs) {
+            return false;
+        }
+        input_path = new_input_path;
+        int i = 0;
+        bool more_frames = true;
+        while (more_frames) {
+            cv::Mat frame_mat = cv::imread(input_seq_path.outputIncrement());
+            if (!frame_mat.empty()) {
+                frames.push_back(frame_mat);
+                i++;
+            } else {
+                more_frames = false;
+            }
+        }
+        frame_count = i;
+    } catch (SeqException&) {
+        // If image can't be opened as an image sequence attempt to open it as a
+        // video file
+        cv::VideoCapture input_video;
+        input_video.open(new_input_path, cv::CAP_IMAGES);
+        if (!input_video.isOpened()) {
+            return false;
+        }
+        input_path = new_input_path;
+        frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
+        // Send all of the frames in the video writer to a vector of matrices.
+        int i;
+        for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
+            input_video >> frames[i];
+        }
+        frame_count = i;
     }
-    input_path = new_input_path;
-    frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
-    // Send all of the frames in the video writer to a vector of matrices.
-    int i;
-    for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
-        input_video >> frames[i];
-    }
-    frame_count = i;
     width = frames[0].cols;
     height = frames[0].rows;
     return true;

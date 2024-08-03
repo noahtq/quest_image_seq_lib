@@ -11,6 +11,10 @@ namespace Quest {
         ".tiff", ".tif", ".exr", ".hdr", ".pic"
     };
 
+    inline const std::vector<std::string> supported_input_video_extensions = {
+        ".mp4"
+    };
+
     class SeqException: public std::exception {
         std::string message;
     public:

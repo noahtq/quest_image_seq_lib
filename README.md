@@ -9,7 +9,7 @@ but you also retain all of the functionality that is offered by OpenCV.
 
 ## Current Version 0.0.2
 ### Download
-[Apple Silicon M2 Static Library - 0.0.2](versions/lib_quest_image_sequence_0_0_2)
+[Apple Silicon M2 Static Library - 0.0.2](versions/lib_quest_image_sequence_0_0_2.tar)
 
 ## Tech Stack
 - C++ and CMake

@@ -45,6 +45,7 @@ namespace Quest {
     };
 
     class ImageSeq {
+    protected:
         std::filesystem::path input_path = "";
         std::filesystem::path output_path = "";
         std::vector<cv::Mat> frames;
@@ -84,9 +85,13 @@ namespace Quest {
         friend void Copy(const ImageSeq& original, ImageSeq& copy);
     };
 
-    // Equality Operators
+    class Proxy : public ImageSeq {
+        double scale;
+    public:
+        explicit Proxy(const ImageSeq& original, double resize_scale = 0.5);
+    };
 
-    // Image Seq Equality Operators Compares the Frames Only
+    // Equality Operators
     bool operator==(const ImageSeq& seq_1, const ImageSeq& seq_2);
     inline bool operator!=(const ImageSeq& seq_1, const ImageSeq& seq_2) { return !(seq_1 == seq_2); }
 }

@@ -113,6 +113,26 @@ void Quest::Copy(const ImageSeq& original, ImageSeq& copy) {
     }
 }
 
+Quest::Proxy::Proxy(const ImageSeq& original, const double resize_scale) {
+    if (resize_scale <= 0 || resize_scale > 1) {
+        throw SeqException("Proxy Sequences must have a resize scale of between 0 and 1");
+    }
+
+    input_path = original.get_input_path();
+    output_path = "";
+    scale = resize_scale;
+    frame_count = original.get_frame_count();
+    for (const auto& frame : original) {
+        cv::Mat resized_frame;
+        cv::resize(frame, resized_frame, cv::Size(), resize_scale, resize_scale, cv::INTER_AREA);
+        frames.push_back(resized_frame);
+    }
+    width = frames[0].cols;
+    height = frames[0].rows;
+}
+
+
+// Image Seq Equality Operators Compares the Frames Only
 bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
     if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;

@@ -29,6 +29,15 @@ protected:
             teardown_output_seq.increment();
         }
 
+        // Remove rendered proxy dog sequence
+        Quest::SeqPath teardown_proxy_seq(proxy_output_path);
+        for (int i = 1; i < 188; i++) {
+            if (std::ifstream(teardown_proxy_seq.outputPath())) {
+                std::filesystem::remove(teardown_proxy_seq.outputPath());
+            }
+            teardown_proxy_seq.increment();
+        }
+
         // Remove image extension comparison images
         for (const auto& entry : std::filesystem::directory_iterator(dandelion_output_path.parent_path())) {
             std::filesystem::remove_all(entry.path());
@@ -66,6 +75,12 @@ protected:
 
     std::filesystem::path wave_path =
     "../../media/test_media/videos/image_sequences/waves_001_shorter/waves_001_%04d.png";
+
+    std::filesystem::path proxy_output_path =
+        "../../media/test_media/videos/image_sequences/proxy_output/proxy_output_%04d.png";
+
+    std::filesystem::path proxy_expected_path =
+        "../../media/test_media/videos/image_sequences/proxy_expected_output/proxy_output_%04d.png";
 
     cv::Mat new_frame;
 
@@ -361,4 +376,28 @@ TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {
         ASSERT_EQ(output_seq_short.outputIncrement(), ss_short.str());
         ASSERT_EQ(output_seq_long.outputIncrement(), ss_long.str());
     }
+}
+
+// Proxy Tests
+TEST_F(ImageSeqLibTest, TestProxyConstructor) {
+    Quest::Proxy dog_proxy(dog_seq);
+
+    ASSERT_EQ(dog_proxy.get_input_path(), dog_seq.get_input_path());
+    ASSERT_EQ(dog_proxy.get_width(), 540);
+    ASSERT_EQ(dog_proxy.get_height(), 960);
+    ASSERT_EQ(dog_proxy.get_frame_count(), 187);
+
+    dog_proxy.render(proxy_output_path);
+    ASSERT_EQ(dog_proxy.get_output_path(), proxy_output_path);
+
+    Quest::ImageSeq dog_proxy_expected, dog_proxy_actual;
+    dog_proxy_expected.open(proxy_expected_path);
+    dog_proxy_actual.open(proxy_output_path);
+
+    ASSERT_EQ(dog_proxy_actual, dog_proxy_expected);
+}
+
+TEST_F(ImageSeqLibTest, TestProxyConstructorBadResizeValue) {
+    ASSERT_THROW(Quest::Proxy dog_proxy(dog_seq, -0.1), Quest::SeqException);
+    ASSERT_THROW(Quest::Proxy dog_proxy_2(dog_seq, 1.1), Quest::SeqException);
 }

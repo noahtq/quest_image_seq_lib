@@ -16,6 +16,7 @@ protected:
         output_seq = new Quest::SeqPath(small_dog_output_path);
         new_frame = cv::imread(house_picture_path);
         test_seq = new Quest::SeqPath("small_dog_%04d.png");
+        wave_seq.open(wave_path);
     }
 
     void TearDown() override {
@@ -63,11 +64,15 @@ protected:
     std::filesystem::path dandelion_unsupported_path =
         "../../media/test_media/images/unsupported_extensions/dandelion_%04d.dpx";
 
+    std::filesystem::path wave_path =
+    "../../media/test_media/videos/image_sequences/waves_001_shorter/waves_001_%04d.png";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
     Quest::ImageSeq dog_seq_identical;
     Quest::ImageSeq dog_blurred;
+    Quest::ImageSeq wave_seq;
 
     Quest::SeqPath *output_seq = nullptr;
     Quest::SeqPath *test_seq = nullptr;
@@ -257,11 +262,29 @@ TEST_F(ImageSeqLibTest, TestImageSeqEqualityOperators) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqCopyFunction) {
     Quest::ImageSeq empty_seq;
-    Quest::ImageSeq wave_seq;
-    wave_seq.open("../../media/test_media/videos/image_sequences/waves_001/waves_001_%04d.png");
 
     Copy(dog_seq, empty_seq);
     Copy(dog_seq, wave_seq);
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+    ASSERT_EQ(dog_seq, wave_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), wave_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), wave_seq.get_output_path());
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqCopyConstructor) {
+    Quest::ImageSeq empty_seq(dog_seq);
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqAssignmentOperator) {
+    Quest::ImageSeq empty_seq = dog_seq;
+    wave_seq = dog_seq;
 
     ASSERT_EQ(dog_seq, empty_seq);
     ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());

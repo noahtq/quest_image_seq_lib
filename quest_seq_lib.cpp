@@ -35,6 +35,11 @@ std::string Quest::SeqPath::outputIncrement() {
     return output;
 }
 
+Quest::ImageSeq::ImageSeq(const ImageSeq& original) {
+    Copy(original, *this);
+}
+
+
 Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
     cv::VideoCapture input_video;
     input_video.open(new_input_path, cv::CAP_IMAGES);
@@ -88,6 +93,11 @@ cv::Mat& Quest::ImageSeq::operator[](const int& index) {
         throw std::out_of_range("Attempting to access a frame in ImageSeq object that doesn't exist");
     }
     return frames[index];
+}
+
+Quest::ImageSeq& Quest::ImageSeq::operator=(const ImageSeq& original) {
+    Copy(original, *this);
+    return *this;
 }
 
 void Quest::Copy(const ImageSeq& original, ImageSeq& copy) {

@@ -55,7 +55,7 @@ namespace Quest {
     public:
         // Constructors
         ImageSeq() = default;
-        ImageSeq(ImageSeq& old_seq); // Copy constructor
+        ImageSeq(const ImageSeq& original); // Copy constructor
 
         // Getters and setters
         [[nodiscard]] std::filesystem::path get_input_path() const { return input_path; }
@@ -74,6 +74,7 @@ namespace Quest {
 
         // Operators
         cv::Mat& operator[](const int& index);
+        ImageSeq& operator=(const ImageSeq& original);
 
         // Image IO
         Quest::SeqErrorCodes open(const std::filesystem::path& new_input_path);

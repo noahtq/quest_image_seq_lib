@@ -18,12 +18,18 @@ protected:
     }
 
     void TearDown() override {
+        // Remove rendered dog sequence
         Quest::SeqPath teardown_output_seq(small_dog_output_path);
         for (int i = 1; i < 188; i++) {
             if (std::ifstream(teardown_output_seq.outputPath())) {
                 std::filesystem::remove(teardown_output_seq.outputPath());
             }
             teardown_output_seq.increment();
+        }
+
+        // Remove image extension comparison images
+        for (const auto& entry : std::filesystem::directory_iterator(dandelion_output_path.parent_path())) {
+            std::filesystem::remove_all(entry.path());
         }
     }
 
@@ -49,6 +55,12 @@ protected:
 
     std::filesystem::path dandelion_path =
         "../../media/test_media/images/all_image_extensions/dandelion_%04d.jpg";
+
+    std::filesystem::path dandelion_output_path =
+        "../../media/test_media/images/all_image_extensions_compare/dandelion_%04d.jpg";
+
+    std::filesystem::path dandelion_unsupported_path =
+        "../../media/test_media/images/unsupported_extensions/dandelion_%04d.dpx";
 
     cv::Mat new_frame;
 
@@ -203,17 +215,23 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
     }
 }
 
-// TODO: Add test for opening video files
-
 TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
-    // Quest::SeqPath dande_seq_path(dandelion_path);
-    // cv::Mat dande = cv::imread(dandelion_path);
-    Quest::ImageSeq dandelion_seq;
-    dandelion_seq.open(dandelion_path);
-    for (auto extension : Quest::supported_image_extensions) {
-        auto output_path = dandelion_path.replace_extension(extension);
-        dandelion_seq.render(output_path);
+    for (const auto& extension : Quest::supported_image_extensions) {
+        auto new_input_path = dandelion_path.replace_extension(extension);
+        auto new_output_path = dandelion_output_path.replace_extension(extension);
+        Quest::ImageSeq dande_seq;
+        dande_seq.open(new_input_path);
+        dande_seq.render(new_output_path);
+        Quest::SeqPath output_image_path(dandelion_output_path);
+        cv::Mat output_mat = cv::imread(output_image_path.outputPath());
+        ASSERT_EQ(output_mat.cols, 640);
+        ASSERT_EQ(output_mat.rows, 427);
     }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
+    Quest::ImageSeq unsupported_seq;
+    ASSERT_FALSE(unsupported_seq.open(dandelion_unsupported_path));
 }
 
 // --- SeqPath Tests ---

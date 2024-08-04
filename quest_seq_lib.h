@@ -7,12 +7,8 @@
 namespace Quest {
     inline const std::vector<std::string> supported_image_extensions = {
         ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
-        ".webp", ".pbm", ".pgm", ".ppm", ".pnm", ".sr", ".ras",
-        ".tiff", ".tif", ".exr", ".hdr", ".pic"
-    };
-
-    inline const std::vector<std::string> supported_input_video_extensions = {
-        ".mp4"
+        ".webp", ".ppm", ".pnm", ".sr", ".ras",
+        ".tiff", ".tif", ".hdr", ".pic"
     };
 
     class SeqException: public std::exception {

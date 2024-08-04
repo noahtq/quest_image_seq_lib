@@ -1,6 +1,5 @@
 #include <iostream>
 #include <regex>
-#include <fstream>
 #include "quest_seq_lib.h"
 
 Quest::SeqPath::SeqPath(const std::filesystem::path& new_input_path) {
@@ -36,11 +35,11 @@ std::string Quest::SeqPath::outputIncrement() {
     return output;
 }
 
-bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
+Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
     cv::VideoCapture input_video;
     input_video.open(new_input_path, cv::CAP_IMAGES);
     if (!input_video.isOpened()) {
-        return false;
+        return SeqErrorCodes::BadPath;
     }
     input_path = new_input_path;
     frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
@@ -57,16 +56,16 @@ bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
     }
     width = frames[0].cols;
     height = frames[0].rows;
-    return true;
+    return SeqErrorCodes::Success;
 }
 
-bool Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
+Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
     if (frames.empty()) {
         throw SeqException("Attempting to render image sequence before images have been opened.");
     }
 
     if (!is_directory(new_output_path.parent_path())) {
-        return false;
+        return SeqErrorCodes::BadPath;
     }
 
     const std::string extension = new_output_path.extension();
@@ -78,10 +77,10 @@ bool Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
                 std::filesystem::path frame_output_path = output_seq.outputIncrement();
                 cv::imwrite(frame_output_path, frame);
             }
-            return true;
+            return SeqErrorCodes::Success;
         }
     }
-    return false;
+    return SeqErrorCodes::UnsupportedExtension;
 }
 
 cv::Mat& Quest::ImageSeq::operator[](const int& index) {

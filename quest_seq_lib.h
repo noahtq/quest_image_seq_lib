@@ -11,6 +11,8 @@ namespace Quest {
         ".tiff", ".tif", ".hdr", ".pic"
     };
 
+    enum class SeqErrorCodes {Success = 0, BadPath, UnsupportedExtension};
+
     class SeqException: public std::exception {
         std::string message;
     public:
@@ -73,8 +75,8 @@ namespace Quest {
         cv::Mat& operator[](const int& index);
 
         // Image IO
-        bool open(const std::filesystem::path& new_input_path);
-        bool render(const std::filesystem::path& new_output_path);
+        Quest::SeqErrorCodes open(const std::filesystem::path& new_input_path);
+        Quest::SeqErrorCodes render(const std::filesystem::path& new_output_path);
     };
 }
 

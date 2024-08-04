@@ -117,7 +117,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     Quest::ImageSeq seq;
-    ASSERT_TRUE(seq.open(small_dog_seq_path));
+    ASSERT_EQ(seq.open(small_dog_seq_path), Quest::SeqErrorCodes::Success);
     ASSERT_EQ(seq.get_input_path(), small_dog_seq_path);
     ASSERT_EQ(seq.get_frame_count(), 187);
     ASSERT_EQ(dog_seq.get_width(), 1080);
@@ -126,7 +126,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(bad_small_dog_seq_path));
+    ASSERT_EQ(seq.open(bad_small_dog_seq_path), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -135,7 +135,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(small_dog_seq_no_framepadding));
+    ASSERT_EQ(seq.open(small_dog_seq_no_framepadding), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -144,7 +144,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(small_dog_seq_name_doesnt_exist));
+    ASSERT_EQ(seq.open(small_dog_seq_name_doesnt_exist), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -175,7 +175,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
-    ASSERT_TRUE(dog_seq.render(small_dog_output_path));
+    ASSERT_EQ(dog_seq.render(small_dog_output_path), Quest::SeqErrorCodes::Success);
     ASSERT_EQ(dog_seq.get_output_path(), small_dog_output_path);
     for(int i = 1; i < 188; i++) {
         std::ifstream ifs(output_seq->outputPath());
@@ -193,11 +193,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderNoFrames) {
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderNonExistentDirectory) {
-    ASSERT_FALSE(dog_seq.render("../fake_dir/dog_output_%04d.png"));
+    ASSERT_EQ(dog_seq.render("../fake_dir/dog_output_%04d.png"), Quest::SeqErrorCodes::BadPath);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
-    ASSERT_FALSE(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"));
+    ASSERT_EQ(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"), Quest::SeqErrorCodes::UnsupportedExtension);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
@@ -231,7 +231,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
     Quest::ImageSeq unsupported_seq;
-    ASSERT_FALSE(unsupported_seq.open(dandelion_unsupported_path));
+    ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
 }
 
 // --- SeqPath Tests ---

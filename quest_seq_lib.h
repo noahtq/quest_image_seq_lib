@@ -55,6 +55,7 @@ namespace Quest {
     public:
         // Constructors
         ImageSeq() = default;
+        ImageSeq(ImageSeq& old_seq); // Copy constructor
 
         // Getters and setters
         [[nodiscard]] std::filesystem::path get_input_path() const { return input_path; }
@@ -77,7 +78,16 @@ namespace Quest {
         // Image IO
         Quest::SeqErrorCodes open(const std::filesystem::path& new_input_path);
         Quest::SeqErrorCodes render(const std::filesystem::path& new_output_path);
+
+        // Friend Functions
+        friend void Copy(const ImageSeq& original, ImageSeq& copy);
     };
+
+    // Equality Operators
+
+    // Image Seq Equality Operators Compares the Frames Only
+    bool operator==(const ImageSeq& seq_1, const ImageSeq& seq_2);
+    inline bool operator!=(const ImageSeq& seq_1, const ImageSeq& seq_2) { return !(seq_1 == seq_2); }
 }
 
 #endif //QUEST_IMAGE_SEQ_LIB_LIBRARY_H

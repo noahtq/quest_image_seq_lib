@@ -11,6 +11,7 @@ class ImageSeqLibTest : public testing::Test {
 protected:
     void SetUp() override {
         dog_seq.open(small_dog_seq_path);
+        dog_seq_identical.open(small_dog_seq_path);
         dog_blurred.open(small_dog_blurred_path);
         output_seq = new Quest::SeqPath(small_dog_output_path);
         new_frame = cv::imread(house_picture_path);
@@ -65,6 +66,7 @@ protected:
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
+    Quest::ImageSeq dog_seq_identical;
     Quest::ImageSeq dog_blurred;
 
     Quest::SeqPath *output_seq = nullptr;
@@ -232,6 +234,41 @@ TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
 TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
     Quest::ImageSeq unsupported_seq;
     ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqEqualityOperators) {
+    ASSERT_TRUE(dog_seq == dog_seq_identical);
+    ASSERT_FALSE(dog_seq != dog_seq_identical);
+
+    Quest::ImageSeq dog_seq_same_frames;
+    dog_seq_same_frames.open("../../media/test_media/videos/image_sequences/small_dog_001_identical/small_dog_001_%04d.png");
+    ASSERT_TRUE(dog_seq == dog_seq_same_frames);
+    ASSERT_FALSE(dog_seq != dog_seq_same_frames);
+
+    Quest::ImageSeq dog_seq_less_frames;
+    dog_seq_less_frames.open("../../media/test_media/videos/image_sequences/small_dog_001_less_frames/small_dog_001_%04d.png");
+    ASSERT_FALSE(dog_seq == dog_seq_less_frames);
+    ASSERT_TRUE(dog_seq != dog_seq_less_frames);
+
+    GaussianBlur(dog_seq_same_frames[50], dog_seq_same_frames[50], cv::Size(15, 15), 0, 0, cv::BORDER_CONSTANT);
+    ASSERT_FALSE(dog_seq == dog_seq_same_frames);
+    ASSERT_TRUE(dog_seq != dog_seq_same_frames);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqCopyFunction) {
+    Quest::ImageSeq empty_seq;
+    Quest::ImageSeq wave_seq;
+    wave_seq.open("../../media/test_media/videos/image_sequences/waves_001/waves_001_%04d.png");
+
+    Copy(dog_seq, empty_seq);
+    Copy(dog_seq, wave_seq);
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+    ASSERT_EQ(dog_seq, wave_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), wave_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), wave_seq.get_output_path());
 }
 
 // --- SeqPath Tests ---

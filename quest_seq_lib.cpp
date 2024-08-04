@@ -89,3 +89,27 @@ cv::Mat& Quest::ImageSeq::operator[](const int& index) {
     }
     return frames[index];
 }
+
+void Quest::Copy(const ImageSeq& original, ImageSeq& copy) {
+    copy.input_path = original.input_path;
+    copy.output_path = original.output_path;
+    copy.frame_count = original.frame_count;
+    copy.width = original.width;
+    copy.height = original.height;
+
+    copy.frames.resize(original.frame_count);
+    for (int i = 0; i < original.frame_count; i++) {
+        original.frames[i].copyTo(copy.frames[i]);
+    }
+}
+
+bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
+    if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
+    if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;
+    for (int i = 0; i < seq_1.get_frame_count(); i++) {
+        if (sum(seq_1.get_frame(i) != seq_2.get_frame(i)) != cv::Scalar(0, 0, 0, 0)) {
+            return false;
+        }
+    }
+    return true;
+}

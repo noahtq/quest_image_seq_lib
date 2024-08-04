@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(quest_image_seq_lib VERSION 0.0.1)
+project(quest_image_seq_lib VERSION 0.0.2)
 
 find_package(OPENCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

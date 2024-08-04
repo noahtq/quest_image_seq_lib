@@ -7,9 +7,9 @@ image sequences.
 This library uses the OpenCV Mat object to represent images so it is easy to work with image sequences
 but you also retain all of the functionality that is offered by OpenCV.
 
-## Current Version 0.0.1
+## Current Version 0.0.2
 ### Download
-[Apple Silicon M2 Static Library - 0.0.1](versions/libquest_image_seq_0.0.1.a)
+[Apple Silicon M2 Static Library - 0.0.2](versions/lib_quest_image_sequence_0_0_2)
 
 ## Tech Stack
 - C++ and CMake
@@ -22,7 +22,7 @@ but you also retain all of the functionality that is offered by OpenCV.
 Note that in order to run benchmarks you must follow the instructions [here](https://github.com/google/benchmark)
 to build the Google_benchmark library for your own system.
 
-## Performance
+## Performance - Last updated for version 0.0.1
 These performance measurements were made on an M2 Macbook Air using Google Benchmark.  
   
 Each benchmark was run with 4 iterations, meaning it was concurrently run on 4 different cores and the time was averaged

@@ -11,19 +11,36 @@ class ImageSeqLibTest : public testing::Test {
 protected:
     void SetUp() override {
         dog_seq.open(small_dog_seq_path);
+        dog_seq_identical.open(small_dog_seq_path);
         dog_blurred.open(small_dog_blurred_path);
         output_seq = new Quest::SeqPath(small_dog_output_path);
         new_frame = cv::imread(house_picture_path);
         test_seq = new Quest::SeqPath("small_dog_%04d.png");
+        wave_seq.open(wave_path);
     }
 
     void TearDown() override {
+        // Remove rendered dog sequence
         Quest::SeqPath teardown_output_seq(small_dog_output_path);
         for (int i = 1; i < 188; i++) {
             if (std::ifstream(teardown_output_seq.outputPath())) {
                 std::filesystem::remove(teardown_output_seq.outputPath());
             }
             teardown_output_seq.increment();
+        }
+
+        // Remove rendered proxy dog sequence
+        Quest::SeqPath teardown_proxy_seq(proxy_output_path);
+        for (int i = 1; i < 188; i++) {
+            if (std::ifstream(teardown_proxy_seq.outputPath())) {
+                std::filesystem::remove(teardown_proxy_seq.outputPath());
+            }
+            teardown_proxy_seq.increment();
+        }
+
+        // Remove image extension comparison images
+        for (const auto& entry : std::filesystem::directory_iterator(dandelion_output_path.parent_path())) {
+            std::filesystem::remove_all(entry.path());
         }
     }
 
@@ -47,10 +64,30 @@ protected:
     std::filesystem::path small_dog_blurred_path =
         "../../media/test_media/videos/image_sequences/small_dog_001_blurred/small_dog_001_blurred_%04d.png";
 
+    std::filesystem::path dandelion_path =
+        "../../media/test_media/images/all_image_extensions/dandelion_%04d.jpg";
+
+    std::filesystem::path dandelion_output_path =
+        "../../media/test_media/images/all_image_extensions_compare/dandelion_%04d.jpg";
+
+    std::filesystem::path dandelion_unsupported_path =
+        "../../media/test_media/images/unsupported_extensions/dandelion_%04d.dpx";
+
+    std::filesystem::path wave_path =
+    "../../media/test_media/videos/image_sequences/waves_001_shorter/waves_001_%04d.png";
+
+    std::filesystem::path proxy_output_path =
+        "../../media/test_media/videos/image_sequences/proxy_output/proxy_output_%04d.png";
+
+    std::filesystem::path proxy_expected_path =
+        "../../media/test_media/videos/image_sequences/proxy_expected_output/proxy_output_%04d.png";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
+    Quest::ImageSeq dog_seq_identical;
     Quest::ImageSeq dog_blurred;
+    Quest::ImageSeq wave_seq;
 
     Quest::SeqPath *output_seq = nullptr;
     Quest::SeqPath *test_seq = nullptr;
@@ -102,7 +139,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     Quest::ImageSeq seq;
-    ASSERT_TRUE(seq.open(small_dog_seq_path));
+    ASSERT_EQ(seq.open(small_dog_seq_path), Quest::SeqErrorCodes::Success);
     ASSERT_EQ(seq.get_input_path(), small_dog_seq_path);
     ASSERT_EQ(seq.get_frame_count(), 187);
     ASSERT_EQ(dog_seq.get_width(), 1080);
@@ -111,7 +148,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(bad_small_dog_seq_path));
+    ASSERT_EQ(seq.open(bad_small_dog_seq_path), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -120,7 +157,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(small_dog_seq_no_framepadding));
+    ASSERT_EQ(seq.open(small_dog_seq_no_framepadding), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -129,7 +166,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
     Quest::ImageSeq seq;
-    ASSERT_FALSE(seq.open(small_dog_seq_name_doesnt_exist));
+    ASSERT_EQ(seq.open(small_dog_seq_name_doesnt_exist), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
@@ -160,7 +197,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
-    ASSERT_TRUE(dog_seq.render(small_dog_output_path));
+    ASSERT_EQ(dog_seq.render(small_dog_output_path), Quest::SeqErrorCodes::Success);
     ASSERT_EQ(dog_seq.get_output_path(), small_dog_output_path);
     for(int i = 1; i < 188; i++) {
         std::ifstream ifs(output_seq->outputPath());
@@ -178,11 +215,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderNoFrames) {
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderNonExistentDirectory) {
-    ASSERT_FALSE(dog_seq.render("../fake_dir/dog_output_%04d.png"));
+    ASSERT_EQ(dog_seq.render("../fake_dir/dog_output_%04d.png"), Quest::SeqErrorCodes::BadPath);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
-    ASSERT_FALSE(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"));
+    ASSERT_EQ(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"), Quest::SeqErrorCodes::UnsupportedExtension);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
@@ -198,6 +235,78 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
     for (int i = 0; i < 187; i++) {
         ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
     }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
+    for (const auto& extension : Quest::supported_image_extensions) {
+        auto new_input_path = dandelion_path.replace_extension(extension);
+        auto new_output_path = dandelion_output_path.replace_extension(extension);
+        Quest::ImageSeq dande_seq;
+        dande_seq.open(new_input_path);
+        dande_seq.render(new_output_path);
+        Quest::SeqPath output_image_path(dandelion_output_path);
+        cv::Mat output_mat = cv::imread(output_image_path.outputPath());
+        ASSERT_EQ(output_mat.cols, 640);
+        ASSERT_EQ(output_mat.rows, 427);
+    }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
+    Quest::ImageSeq unsupported_seq;
+    ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqEqualityOperators) {
+    ASSERT_TRUE(dog_seq == dog_seq_identical);
+    ASSERT_FALSE(dog_seq != dog_seq_identical);
+
+    Quest::ImageSeq dog_seq_same_frames;
+    dog_seq_same_frames.open("../../media/test_media/videos/image_sequences/small_dog_001_identical/small_dog_001_%04d.png");
+    ASSERT_TRUE(dog_seq == dog_seq_same_frames);
+    ASSERT_FALSE(dog_seq != dog_seq_same_frames);
+
+    Quest::ImageSeq dog_seq_less_frames;
+    dog_seq_less_frames.open("../../media/test_media/videos/image_sequences/small_dog_001_less_frames/small_dog_001_%04d.png");
+    ASSERT_FALSE(dog_seq == dog_seq_less_frames);
+    ASSERT_TRUE(dog_seq != dog_seq_less_frames);
+
+    GaussianBlur(dog_seq_same_frames[50], dog_seq_same_frames[50], cv::Size(15, 15), 0, 0, cv::BORDER_CONSTANT);
+    ASSERT_FALSE(dog_seq == dog_seq_same_frames);
+    ASSERT_TRUE(dog_seq != dog_seq_same_frames);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqCopyFunction) {
+    Quest::ImageSeq empty_seq;
+
+    Copy(dog_seq, empty_seq);
+    Copy(dog_seq, wave_seq);
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+    ASSERT_EQ(dog_seq, wave_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), wave_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), wave_seq.get_output_path());
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqCopyConstructor) {
+    Quest::ImageSeq empty_seq(dog_seq);
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqAssignmentOperator) {
+    Quest::ImageSeq empty_seq = dog_seq;
+    wave_seq = dog_seq;
+
+    ASSERT_EQ(dog_seq, empty_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), empty_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), empty_seq.get_output_path());
+    ASSERT_EQ(dog_seq, wave_seq);
+    ASSERT_EQ(dog_seq.get_input_path(), wave_seq.get_input_path());
+    ASSERT_EQ(dog_seq.get_output_path(), wave_seq.get_output_path());
 }
 
 // --- SeqPath Tests ---
@@ -267,4 +376,28 @@ TEST_F(ImageSeqLibTest, TestSeqPathoutputIncrement) {
         ASSERT_EQ(output_seq_short.outputIncrement(), ss_short.str());
         ASSERT_EQ(output_seq_long.outputIncrement(), ss_long.str());
     }
+}
+
+// Proxy Tests
+TEST_F(ImageSeqLibTest, TestProxyConstructor) {
+    Quest::Proxy dog_proxy(dog_seq);
+
+    ASSERT_EQ(dog_proxy.get_input_path(), dog_seq.get_input_path());
+    ASSERT_EQ(dog_proxy.get_width(), 540);
+    ASSERT_EQ(dog_proxy.get_height(), 960);
+    ASSERT_EQ(dog_proxy.get_frame_count(), 187);
+
+    dog_proxy.render(proxy_output_path);
+    ASSERT_EQ(dog_proxy.get_output_path(), proxy_output_path);
+
+    Quest::ImageSeq dog_proxy_expected, dog_proxy_actual;
+    dog_proxy_expected.open(proxy_expected_path);
+    dog_proxy_actual.open(proxy_output_path);
+
+    ASSERT_EQ(dog_proxy_actual, dog_proxy_expected);
+}
+
+TEST_F(ImageSeqLibTest, TestProxyConstructorBadResizeValue) {
+    ASSERT_THROW(Quest::Proxy dog_proxy(dog_seq, -0.1), Quest::SeqException);
+    ASSERT_THROW(Quest::Proxy dog_proxy_2(dog_seq, 1.1), Quest::SeqException);
 }

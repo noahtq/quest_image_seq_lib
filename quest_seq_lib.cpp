@@ -35,11 +35,16 @@ std::string Quest::SeqPath::outputIncrement() {
     return output;
 }
 
-bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
+Quest::ImageSeq::ImageSeq(const ImageSeq& original) {
+    Copy(original, *this);
+}
+
+
+Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
     cv::VideoCapture input_video;
     input_video.open(new_input_path, cv::CAP_IMAGES);
     if (!input_video.isOpened()) {
-        return false;
+        return SeqErrorCodes::BadPath;
     }
     input_path = new_input_path;
     frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
@@ -49,18 +54,23 @@ bool Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
         input_video >> frames[i];
     }
     frame_count = i;
+    // CV VideoCapture won't work if it is only one frame, handling that edge case
+    if (frame_count == 1) {
+        const SeqPath input_seq(new_input_path);
+        frames[0] = cv::imread(input_seq.outputPath());
+    }
     width = frames[0].cols;
     height = frames[0].rows;
-    return true;
+    return SeqErrorCodes::Success;
 }
 
-bool Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
+Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
     if (frames.empty()) {
         throw SeqException("Attempting to render image sequence before images have been opened.");
     }
 
     if (!is_directory(new_output_path.parent_path())) {
-        return false;
+        return SeqErrorCodes::BadPath;
     }
 
     const std::string extension = new_output_path.extension();
@@ -72,10 +82,10 @@ bool Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
                 std::filesystem::path frame_output_path = output_seq.outputIncrement();
                 cv::imwrite(frame_output_path, frame);
             }
-            return true;
+            return SeqErrorCodes::Success;
         }
     }
-    return false;
+    return SeqErrorCodes::UnsupportedExtension;
 }
 
 cv::Mat& Quest::ImageSeq::operator[](const int& index) {
@@ -83,4 +93,53 @@ cv::Mat& Quest::ImageSeq::operator[](const int& index) {
         throw std::out_of_range("Attempting to access a frame in ImageSeq object that doesn't exist");
     }
     return frames[index];
+}
+
+Quest::ImageSeq& Quest::ImageSeq::operator=(const ImageSeq& original) {
+    Copy(original, *this);
+    return *this;
+}
+
+void Quest::Copy(const ImageSeq& original, ImageSeq& copy) {
+    copy.input_path = original.input_path;
+    copy.output_path = original.output_path;
+    copy.frame_count = original.frame_count;
+    copy.width = original.width;
+    copy.height = original.height;
+
+    copy.frames.resize(original.frame_count);
+    for (int i = 0; i < original.frame_count; i++) {
+        original.frames[i].copyTo(copy.frames[i]);
+    }
+}
+
+Quest::Proxy::Proxy(const ImageSeq& original, const double resize_scale) {
+    if (resize_scale <= 0 || resize_scale > 1) {
+        throw SeqException("Proxy Sequences must have a resize scale of between 0 and 1");
+    }
+
+    input_path = original.get_input_path();
+    output_path = "";
+    scale = resize_scale;
+    frame_count = original.get_frame_count();
+    for (const auto& frame : original) {
+        cv::Mat resized_frame;
+        cv::resize(frame, resized_frame, cv::Size(), resize_scale, resize_scale, cv::INTER_AREA);
+        frames.push_back(resized_frame);
+    }
+    width = frames[0].cols;
+    height = frames[0].rows;
+}
+
+
+// Image Seq Equality Operators Compares the Frames Only
+bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
+    if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
+    if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;
+    for (int i = 0; i < seq_1.get_frame_count(); i++) {
+        if (sum(seq_1.get_frame(i) != seq_2.get_frame(i)) != cv::Scalar(0, 0, 0, 0)) {
+            return false;
+        }
+    }
+    return true;
 }

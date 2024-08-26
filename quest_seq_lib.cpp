@@ -52,12 +52,14 @@ Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_inpu
     int i;
     for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
         input_video >> frames[i];
+        if (frames[i].cols > 0 && frames[i].rows > 0) GiveMatPureWhiteAlpha(frames[i]);
     }
     frame_count = i;
     // CV VideoCapture won't work if it is only one frame, handling that edge case
     if (frame_count == 1) {
         const SeqPath input_seq(new_input_path);
         frames[0] = cv::imread(input_seq.outputPath());
+        GiveMatPureWhiteAlpha(frames[0]);
     }
     width = frames[0].cols;
     height = frames[0].rows;
@@ -143,3 +145,14 @@ bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     }
     return true;
 }
+
+void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+    const cv::Size frame_size = cv::Size(image.cols, image.rows);
+    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(255));
+    image.convertTo(image, CV_8UC4);
+    cv::Mat channels[4];
+    cv::split(image, channels);
+    pure_white.copyTo(channels[3]);
+    cv::merge(channels, 4, image);
+}
+

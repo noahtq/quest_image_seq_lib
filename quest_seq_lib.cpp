@@ -147,6 +147,12 @@ bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
 }
 
 void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+    if (image.type() != 16 && image.type() != 24) {
+        throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
+    }
+    if (image.rows <= 0 || image.cols <= 0) {
+        throw SeqException("The Mat must have dimensions greater than 0 x 0");
+    }
     const cv::Size frame_size = cv::Size(image.cols, image.rows);
     const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(255));
     image.convertTo(image, CV_8UC4);

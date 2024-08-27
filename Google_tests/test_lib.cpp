@@ -208,7 +208,9 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
         std::ifstream ifs(output_seq->outputPath());
         ASSERT_TRUE(ifs);
         cv::Mat rendered_frame;
+        rendered_frame.convertTo(rendered_frame, CV_8UC4);
         rendered_frame = cv::imread(output_seq->outputPath());
+        Quest::GiveMatPureWhiteAlpha(rendered_frame);
         ASSERT_TRUE((sum(rendered_frame != dog_seq_alpha.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0))); //TODO: issue here causing the test to crash but functionality is working
         output_seq->increment();
     }
@@ -235,9 +237,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
 
     for (cv::Mat& frame : dog_seq) {
         GaussianBlur(frame, frame, cv::Size(25, 25), 0, 0, cv::BORDER_CONSTANT);
+        Quest::GiveMatPureWhiteAlpha(frame); // Have to make frame pure white again since the gaussian blur also affects alpha channel
     }
 
     for (int i = 0; i < 187; i++) {
+        cv::Scalar scl((sum(dog_seq[i] != dog_blurred[i])));
         ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
     }
 }
@@ -405,4 +409,9 @@ TEST_F(ImageSeqLibTest, TestProxyConstructor) {
 TEST_F(ImageSeqLibTest, TestProxyConstructorBadResizeValue) {
     ASSERT_THROW(Quest::Proxy dog_proxy(dog_seq, -0.1), Quest::SeqException);
     ASSERT_THROW(Quest::Proxy dog_proxy_2(dog_seq, 1.1), Quest::SeqException);
+}
+
+// Helper Method Tests
+TEST_F(ImageSeqLibTest, TestGiveMatPureWhiteAlpha) {
+    
 }

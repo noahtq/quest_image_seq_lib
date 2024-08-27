@@ -52,7 +52,7 @@ Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_inpu
     int i;
     for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
         input_video >> frames[i];
-        if (!frames[i].empty()) GiveMatPureWhiteAlpha(frames[i]);
+        if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
     }
     frame_count = i;
     // CV VideoCapture won't work if it is only one frame, handling that edge case

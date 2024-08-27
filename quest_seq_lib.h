@@ -7,8 +7,8 @@
 namespace Quest {
     inline const std::vector<std::string> supported_image_extensions = {
         ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
-        ".webp", ".ppm", ".pnm", ".sr", ".ras",
-        ".tiff", ".tif", ".hdr", ".pic"
+        ".webp", ".sr", ".ras",
+        ".tiff", ".tif"
     };
 
     enum class SeqErrorCodes {Success = 0, BadPath, UnsupportedExtension};

@@ -133,6 +133,12 @@ Quest::Proxy::Proxy(const ImageSeq& original, const double resize_scale) {
     height = frames[0].rows;
 }
 
+bool Quest::operator==(const cv::Mat& mat_1, const cv::Mat& mat_2) {
+    if ((mat_1.type() != 16 && mat_1.type() != 24) || (mat_2.type() != 16 && mat_2.type() != 24)) {
+        throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
+    }
+}
+
 
 // Image Seq Equality Operators Compares the Frames Only
 bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
@@ -146,7 +152,7 @@ bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     return true;
 }
 
-void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+void Quest::GiveMatAlpha(cv::Mat& image, const int& alpha_val) {
     if (image.type() != 16 && image.type() != 24) {
         throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
     }
@@ -154,11 +160,19 @@ void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
         throw SeqException("The Mat must have dimensions greater than 0 x 0");
     }
     const cv::Size frame_size = cv::Size(image.cols, image.rows);
-    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(255));
+    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(alpha_val));
     image.convertTo(image, CV_8UC4);
     cv::Mat channels[4];
     cv::split(image, channels);
     pure_white.copyTo(channels[3]);
     cv::merge(channels, 4, image);
+}
+
+void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+    GiveMatAlpha(image, 255);
+}
+
+void Quest::GiveMatPureBlackAlpha(cv::Mat& image) {
+    GiveMatAlpha(image, 0);
 }
 

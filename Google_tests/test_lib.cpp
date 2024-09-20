@@ -213,7 +213,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
         rendered_frame.convertTo(rendered_frame, CV_8UC4);
         rendered_frame = cv::imread(output_seq->outputPath());
         Quest::GiveMatPureWhiteAlpha(rendered_frame);
-        ASSERT_TRUE((sum(rendered_frame != dog_seq_alpha.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0))); //TODO: issue here causing the test to crash but functionality is working
+        ASSERT_TRUE((sum(rendered_frame != dog_seq_alpha.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0)));
         output_seq->increment();
     }
 }
@@ -243,7 +243,6 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
     }
 
     for (int i = 0; i < 187; i++) {
-        cv::Scalar scl((sum(dog_seq[i] != dog_blurred[i])));
         ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
     }
 }

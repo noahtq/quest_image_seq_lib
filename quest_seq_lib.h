@@ -92,11 +92,15 @@ namespace Quest {
     };
 
     // Equality Operators
+    bool operator==(const cv::Mat& mat_1, const cv::Mat& mat_2);
+    bool operator!=(const cv::Mat& mat_1, const cv::Mat& mat_2);
     bool operator==(const ImageSeq& seq_1, const ImageSeq& seq_2);
     inline bool operator!=(const ImageSeq& seq_1, const ImageSeq& seq_2) { return !(seq_1 == seq_2); }
 
     // Helper functions
+    void GiveMatAlpha(cv::Mat& image, const int& alpha_val);
     void GiveMatPureWhiteAlpha(cv::Mat& image);
+    void GiveMatPureBlackAlpha(cv::Mat& image);
 }
 
 #endif //QUEST_IMAGE_SEQ_LIB_LIBRARY_H

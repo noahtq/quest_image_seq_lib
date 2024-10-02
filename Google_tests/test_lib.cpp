@@ -119,7 +119,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqBasicGetters) {
 TEST_F(ImageSeqLibTest, TestImageSeqFrameGetter) {
     cv::Mat test_frame = dog_seq.get_frame(10);
     GaussianBlur(test_frame, test_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(test_frame != dog_seq.get_frame(10)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(test_frame, dog_seq.get_frame(10)));
 }
 
 // Similar to the above test, when we set a frame the internal matrix for the
@@ -128,11 +128,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqFrameGetter) {
 TEST_F(ImageSeqLibTest, TestImageSeqFrameSetter) {
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(100, new_frame);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(100)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(100)));
 
     // Test that both Mats reference the same memory on the heap
     GaussianBlur(new_frame, new_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(100)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(100)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
@@ -183,7 +183,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {
     cv::Mat test_frame = dog_seq[20];
     GaussianBlur(test_frame, test_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(test_frame != dog_seq.get_frame(20)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(test_frame, dog_seq.get_frame(20)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
@@ -191,11 +191,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
 
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(50, new_frame);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(50)));
 
     // Test that both Mats reference the same memory on the heap
     GaussianBlur(new_frame, new_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(50)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
@@ -213,7 +213,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
         rendered_frame.convertTo(rendered_frame, CV_8UC4);
         rendered_frame = cv::imread(output_seq->outputPath());
         Quest::GiveMatPureWhiteAlpha(rendered_frame);
-        ASSERT_TRUE((sum(rendered_frame != dog_seq_alpha.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0)));
+        ASSERT_TRUE(Quest::MatEquals(rendered_frame, dog_seq_alpha.get_frame(i - 1)));
         output_seq->increment();
     }
 }
@@ -242,9 +242,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
         Quest::GiveMatPureWhiteAlpha(frame); // Have to make frame pure white again since the gaussian blur also affects alpha channel
     }
 
-    for (int i = 0; i < 187; i++) {
-        ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
-    }
+    ASSERT_EQ(dog_seq, dog_blurred);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {

@@ -189,6 +189,11 @@ void Quest::GiveMatAlpha(cv::Mat& image, const int& alpha_val) {
     if (image.rows <= 0 || image.cols <= 0) {
         throw SeqException("The Mat must have dimensions greater than 0 x 0");
     }
+
+    if (alpha_val < 0 || alpha_val > 255) {
+        throw SeqException("Alpha value must be between 0 and 255");
+    }
+
     const cv::Size frame_size = cv::Size(image.cols, image.rows);
     const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(alpha_val));
     image.convertTo(image, CV_8UC4);

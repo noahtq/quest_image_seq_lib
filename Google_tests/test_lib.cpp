@@ -119,7 +119,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqBasicGetters) {
 TEST_F(ImageSeqLibTest, TestImageSeqFrameGetter) {
     cv::Mat test_frame = dog_seq.get_frame(10);
     GaussianBlur(test_frame, test_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(test_frame != dog_seq.get_frame(10)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(test_frame, dog_seq.get_frame(10)));
 }
 
 // Similar to the above test, when we set a frame the internal matrix for the
@@ -128,11 +128,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqFrameGetter) {
 TEST_F(ImageSeqLibTest, TestImageSeqFrameSetter) {
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(100, new_frame);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(100)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(100)));
 
     // Test that both Mats reference the same memory on the heap
     GaussianBlur(new_frame, new_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(100)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(100)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
@@ -183,7 +183,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {
     cv::Mat test_frame = dog_seq[20];
     GaussianBlur(test_frame, test_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(test_frame != dog_seq.get_frame(20)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(test_frame, dog_seq.get_frame(20)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
@@ -191,11 +191,11 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorAssignmentSuccess) {
 
     // Test that the new Mat is assigned correctly to frame 100 in the image sequence
     dog_seq.set_frame(50, new_frame);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(50)));
 
     // Test that both Mats reference the same memory on the heap
     GaussianBlur(new_frame, new_frame, cv::Size(5, 5), 0, 0, cv::BORDER_CONSTANT);
-    ASSERT_TRUE((sum(new_frame != dog_seq.get_frame(50)) == cv::Scalar(0, 0, 0, 0)));
+    ASSERT_TRUE(Quest::MatEquals(new_frame, dog_seq.get_frame(50)));
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
@@ -213,7 +213,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
         rendered_frame.convertTo(rendered_frame, CV_8UC4);
         rendered_frame = cv::imread(output_seq->outputPath());
         Quest::GiveMatPureWhiteAlpha(rendered_frame);
-        ASSERT_TRUE((sum(rendered_frame != dog_seq_alpha.get_frame(i - 1)) == cv::Scalar(0, 0, 0, 0))); //TODO: issue here causing the test to crash but functionality is working
+        ASSERT_TRUE(Quest::MatEquals(rendered_frame, dog_seq_alpha.get_frame(i - 1)));
         output_seq->increment();
     }
 }
@@ -242,10 +242,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
         Quest::GiveMatPureWhiteAlpha(frame); // Have to make frame pure white again since the gaussian blur also affects alpha channel
     }
 
-    for (int i = 0; i < 187; i++) {
-        cv::Scalar scl((sum(dog_seq[i] != dog_blurred[i])));
-        ASSERT_TRUE((sum(dog_seq[i] != dog_blurred[i]) == cv::Scalar(0, 0, 0, 0)));
-    }
+    ASSERT_EQ(dog_seq, dog_blurred);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
@@ -265,6 +262,68 @@ TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
 TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
     Quest::ImageSeq unsupported_seq;
     ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
+}
+
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionWrongType) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+
+    img.convertTo(img, CV_32F);
+
+    ASSERT_THROW(Quest::MatEquals(img, img_eql), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img, img_eql), Quest::SeqException);
+
+    ASSERT_THROW(Quest::MatEquals(img_eql, img), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img_eql, img), Quest::SeqException);
+
+    ASSERT_THROW(Quest::MatEquals(img, img), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img, img), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionNoAlphaImage) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+
+    // Compare two identical mats
+    ASSERT_TRUE(Quest::MatEquals(img, img_eql));
+    ASSERT_FALSE(Quest::MatNotEquals(img, img_eql));
+
+    // Compare two identical mats of different sizes
+    cv::Mat img_eql_resized;
+    cv::resize(img_eql, img_eql_resized, cv::Size(), 0.5, 0.5, cv::INTER_AREA);
+
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql_resized));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql_resized));
+
+    // Compare two almost identical mats of different types
+    cv::Mat img_eql_alpha;
+    img_eql.copyTo(img_eql_alpha);
+    Quest::GiveMatPureBlackAlpha(img_eql_alpha);
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql_alpha));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql_alpha));
+
+    // Compare two almost identical mats except one pixels value has been changed
+    img_eql.at<cv::Vec3b>(100, 100)[0] /= 2;
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql));
+
+}
+
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionWithAlpha) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+    Quest::GiveMatPureWhiteAlpha(img);
+    Quest::GiveMatPureWhiteAlpha(img_eql);
+
+    // Compare two identical mats
+    ASSERT_TRUE(Quest::MatEquals(img, img_eql));
+    ASSERT_FALSE(Quest::MatNotEquals(img, img_eql));
+
+    // Compare two almost identical mats except one pixels value has been changed
+    img_eql.at<cv::Vec3b>(100, 100)[3] /= 2;
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql));
+
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqEqualityOperators) {
@@ -414,25 +473,52 @@ TEST_F(ImageSeqLibTest, TestProxyConstructorBadResizeValue) {
 }
 
 // Helper Method Tests
-TEST_F(ImageSeqLibTest, TestGiveMatPureWhiteAlphaWithBadMat) {
+TEST_F(ImageSeqLibTest, TestGiveMatAlphaWithBadMat) {
     cv::Mat channels[4];
     cv::split(new_frame, channels);
-    ASSERT_THROW(Quest::GiveMatPureWhiteAlpha(channels[2]), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(channels[2], 123), Quest::SeqException);
 
     new_frame.convertTo(new_frame, CV_32F);
-    ASSERT_THROW(Quest::GiveMatPureWhiteAlpha(new_frame), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(new_frame, 123), Quest::SeqException);
 
     cv::Mat zero_x_mat(cv::Size(0, 100), CV_8UC4, cv::Scalar(100, 100, 100, 100));
     cv::Mat zero_y_mat(cv::Size(100, 0), CV_8UC4, cv::Scalar(100, 100, 100, 100));
     cv::Mat zero_both_mat(cv::Size(0, 0), CV_8UC4, cv::Scalar(100, 100, 100, 100));
-    ASSERT_THROW(Quest::GiveMatPureWhiteAlpha(zero_x_mat), Quest::SeqException);
-    ASSERT_THROW(Quest::GiveMatPureWhiteAlpha(zero_y_mat), Quest::SeqException);
-    ASSERT_THROW(Quest::GiveMatPureWhiteAlpha(zero_both_mat), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(zero_x_mat,  123), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(zero_y_mat, 123), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(zero_both_mat, 123), Quest::SeqException);
 }
 
-TEST_F(ImageSeqLibTest, TestGiveMatPureWhiteAlphaSuccess) {
+TEST_F(ImageSeqLibTest, TestGiveMatAlphaWithBadAlphaValue) {
+    ASSERT_THROW(Quest::GiveMatAlpha(new_frame, -1), Quest::SeqException);
+    ASSERT_THROW(Quest::GiveMatAlpha(new_frame, 256), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestGiveMatAlphaSuccess) {
     const cv::Size frame_size = cv::Size(new_frame.cols, new_frame.rows);
-    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(255));
+    const cv::Mat just_alpha(frame_size, CV_8UC1, cv::Scalar(123));
+
+    // Testing Mat without a starting alpha channel
+    Quest::GiveMatAlpha(new_frame, 123);
+    ASSERT_EQ(new_frame.cols, 640);
+    ASSERT_EQ(new_frame.rows, 427);
+    cv::Mat channels[4];
+    cv::split(new_frame, channels);
+    ASSERT_EQ(sum(channels[3] != just_alpha), cv::Scalar(0));
+
+    // Testing Mat starting with an alpha channel that isn't pure white
+    cv::Mat weird_alpha = cv::imread(noise_alpha_path);
+    Quest::GiveMatAlpha(weird_alpha, 123);
+    ASSERT_EQ(weird_alpha.cols, 640);
+    ASSERT_EQ(weird_alpha.rows, 427);
+    cv::Mat weird_channels[4];
+    cv::split(weird_alpha, weird_channels);
+    ASSERT_EQ(sum(weird_channels[3] != just_alpha), cv::Scalar(0));
+}
+
+TEST_F(ImageSeqLibTest, TestGiveMatWhiteAlphaSuccess) {
+    const cv::Size frame_size = cv::Size(new_frame.cols, new_frame.rows);
+    const cv::Mat just_alpha(frame_size, CV_8UC1, cv::Scalar(255));
 
     // Testing Mat without a starting alpha channel
     Quest::GiveMatPureWhiteAlpha(new_frame);
@@ -440,7 +526,7 @@ TEST_F(ImageSeqLibTest, TestGiveMatPureWhiteAlphaSuccess) {
     ASSERT_EQ(new_frame.rows, 427);
     cv::Mat channels[4];
     cv::split(new_frame, channels);
-    ASSERT_EQ(sum(channels[3] != pure_white), cv::Scalar(0));
+    ASSERT_EQ(sum(channels[3] != just_alpha), cv::Scalar(0));
 
     // Testing Mat starting with an alpha channel that isn't pure white
     cv::Mat weird_alpha = cv::imread(noise_alpha_path);
@@ -449,5 +535,27 @@ TEST_F(ImageSeqLibTest, TestGiveMatPureWhiteAlphaSuccess) {
     ASSERT_EQ(weird_alpha.rows, 427);
     cv::Mat weird_channels[4];
     cv::split(weird_alpha, weird_channels);
-    ASSERT_EQ(sum(weird_channels[3] != pure_white), cv::Scalar(0));
+    ASSERT_EQ(sum(weird_channels[3] != just_alpha), cv::Scalar(0));
+}
+
+TEST_F(ImageSeqLibTest, TestGiveMatBlackAlphaSuccess) {
+    const cv::Size frame_size = cv::Size(new_frame.cols, new_frame.rows);
+    const cv::Mat just_alpha(frame_size, CV_8UC1, cv::Scalar(0));
+
+    // Testing Mat without a starting alpha channel
+    Quest::GiveMatPureBlackAlpha(new_frame);
+    ASSERT_EQ(new_frame.cols, 640);
+    ASSERT_EQ(new_frame.rows, 427);
+    cv::Mat channels[4];
+    cv::split(new_frame, channels);
+    ASSERT_EQ(sum(channels[3] != just_alpha), cv::Scalar(0));
+
+    // Testing Mat starting with an alpha channel that isn't pure white
+    cv::Mat weird_alpha = cv::imread(noise_alpha_path);
+    Quest::GiveMatPureBlackAlpha(weird_alpha);
+    ASSERT_EQ(weird_alpha.cols, 640);
+    ASSERT_EQ(weird_alpha.rows, 427);
+    cv::Mat weird_channels[4];
+    cv::split(weird_alpha, weird_channels);
+    ASSERT_EQ(sum(weird_channels[3] != just_alpha), cv::Scalar(0));
 }

@@ -133,32 +133,81 @@ Quest::Proxy::Proxy(const ImageSeq& original, const double resize_scale) {
     height = frames[0].rows;
 }
 
+bool Quest::MatEquals(const cv::Mat& mat_1, const cv::Mat& mat_2) {
+    if ((mat_1.type() != 16 && mat_1.type() != 24) || (mat_2.type() != 16 && mat_2.type() != 24)) {
+        throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
+    }
+
+    // Return false if one mat has an alpha and the other does not
+    if (mat_1.type() != mat_2.type()) return false;
+
+    if (mat_1.rows != mat_2.rows || mat_1.cols != mat_2.cols) return false;
+
+    switch (mat_1.type()) {
+    case 16: {
+        cv::MatConstIterator_<cv::Vec3b> mat_1_it, mat_2_it, mat_1_end;
+        for (mat_1_it = mat_1.begin<cv::Vec3b>(), mat_2_it = mat_2.begin<cv::Vec3b>(),
+            mat_1_end = mat_1.end<cv::Vec3b>(); mat_1_it < mat_1_end;
+            ++mat_1_it, ++mat_2_it) {
+            for (int ch = 0; ch < 3; ch++) {
+                if ((*mat_1_it)[ch] != (*mat_2_it)[ch]) return false;
+            }
+            }
+        break;
+    }
+    case 24: {
+        cv::MatConstIterator_<cv::Vec4b> mat_1_it, mat_2_it, mat_1_end;
+        for (mat_1_it = mat_1.begin<cv::Vec4b>(), mat_2_it = mat_2.begin<cv::Vec4b>(),
+            mat_1_end = mat_1.end<cv::Vec4b>(); mat_1_it < mat_1_end;
+            ++mat_1_it, ++mat_2_it) {
+            for (int ch = 0; ch < 4; ch++) {
+                if ((*mat_1_it)[ch] != (*mat_2_it)[ch]) return false;
+            }
+            }
+        break;
+    }
+    default:
+        throw SeqException("Something went wrong");
+    }
+    return true;
+}
 
 // Image Seq Equality Operators Compares the Frames Only
 bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
     if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;
     for (int i = 0; i < seq_1.get_frame_count(); i++) {
-        if (sum(seq_1.get_frame(i) != seq_2.get_frame(i)) != cv::Scalar(0, 0, 0, 0)) {
-            return false;
-        }
+        if (Quest::MatNotEquals(seq_1.get_frame(i), seq_2.get_frame(i))) return false;
     }
     return true;
 }
 
-void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+void Quest::GiveMatAlpha(cv::Mat& image, const int& alpha_val) {
     if (image.type() != 16 && image.type() != 24) {
         throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
     }
     if (image.rows <= 0 || image.cols <= 0) {
         throw SeqException("The Mat must have dimensions greater than 0 x 0");
     }
+
+    if (alpha_val < 0 || alpha_val > 255) {
+        throw SeqException("Alpha value must be between 0 and 255");
+    }
+
     const cv::Size frame_size = cv::Size(image.cols, image.rows);
-    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(255));
+    const cv::Mat pure_white(frame_size, CV_8UC1, cv::Scalar(alpha_val));
     image.convertTo(image, CV_8UC4);
     cv::Mat channels[4];
     cv::split(image, channels);
     pure_white.copyTo(channels[3]);
     cv::merge(channels, 4, image);
+}
+
+void Quest::GiveMatPureWhiteAlpha(cv::Mat& image) {
+    GiveMatAlpha(image, 255);
+}
+
+void Quest::GiveMatPureBlackAlpha(cv::Mat& image) {
+    GiveMatAlpha(image, 0);
 }
 

@@ -133,21 +133,51 @@ Quest::Proxy::Proxy(const ImageSeq& original, const double resize_scale) {
     height = frames[0].rows;
 }
 
-bool Quest::operator==(const cv::Mat& mat_1, const cv::Mat& mat_2) {
+bool Quest::MatEquals(const cv::Mat& mat_1, const cv::Mat& mat_2) {
     if ((mat_1.type() != 16 && mat_1.type() != 24) || (mat_2.type() != 16 && mat_2.type() != 24)) {
         throw SeqException("This function only supports CV Mat types of CV_8UC3 (default Mat type) or CV_8UC4");
     }
-}
 
+    // Return false if one mat has an alpha and the other does not
+    if (mat_1.type() != mat_2.type()) return false;
+
+    if (mat_1.rows != mat_2.rows || mat_1.cols != mat_2.cols) return false;
+
+    switch (mat_1.type()) {
+    case 16: {
+        cv::MatConstIterator_<cv::Vec3b> mat_1_it, mat_2_it, mat_1_end;
+        for (mat_1_it = mat_1.begin<cv::Vec3b>(), mat_2_it = mat_2.begin<cv::Vec3b>(),
+            mat_1_end = mat_1.end<cv::Vec3b>(); mat_1_it < mat_1_end;
+            ++mat_1_it, ++mat_2_it) {
+            for (int ch = 0; ch < 3; ch++) {
+                if ((*mat_1_it)[ch] != (*mat_2_it)[ch]) return false;
+            }
+            }
+        break;
+    }
+    case 24: {
+        cv::MatConstIterator_<cv::Vec4b> mat_1_it, mat_2_it, mat_1_end;
+        for (mat_1_it = mat_1.begin<cv::Vec4b>(), mat_2_it = mat_2.begin<cv::Vec4b>(),
+            mat_1_end = mat_1.end<cv::Vec4b>(); mat_1_it < mat_1_end;
+            ++mat_1_it, ++mat_2_it) {
+            for (int ch = 0; ch < 4; ch++) {
+                if ((*mat_1_it)[ch] != (*mat_2_it)[ch]) return false;
+            }
+            }
+        break;
+    }
+    default:
+        throw SeqException("Something went wrong");
+    }
+    return true;
+}
 
 // Image Seq Equality Operators Compares the Frames Only
 bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
     if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;
     for (int i = 0; i < seq_1.get_frame_count(); i++) {
-        if (sum(seq_1.get_frame(i) != seq_2.get_frame(i)) != cv::Scalar(0, 0, 0, 0)) {
-            return false;
-        }
+        if (Quest::MatNotEquals(seq_1.get_frame(i), seq_2.get_frame(i))) return false;
     }
     return true;
 }

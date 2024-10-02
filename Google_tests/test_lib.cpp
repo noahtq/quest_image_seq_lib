@@ -266,6 +266,68 @@ TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
     ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
 }
 
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionWrongType) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+
+    img.convertTo(img, CV_32F);
+
+    ASSERT_THROW(Quest::MatEquals(img, img_eql), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img, img_eql), Quest::SeqException);
+
+    ASSERT_THROW(Quest::MatEquals(img_eql, img), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img_eql, img), Quest::SeqException);
+
+    ASSERT_THROW(Quest::MatEquals(img, img), Quest::SeqException);
+    ASSERT_THROW(Quest::MatNotEquals(img, img), Quest::SeqException);
+}
+
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionNoAlphaImage) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+
+    // Compare two identical mats
+    ASSERT_TRUE(Quest::MatEquals(img, img_eql));
+    ASSERT_FALSE(Quest::MatNotEquals(img, img_eql));
+
+    // Compare two identical mats of different sizes
+    cv::Mat img_eql_resized;
+    cv::resize(img_eql, img_eql_resized, cv::Size(), 0.5, 0.5, cv::INTER_AREA);
+
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql_resized));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql_resized));
+
+    // Compare two almost identical mats of different types
+    cv::Mat img_eql_alpha;
+    img_eql.copyTo(img_eql_alpha);
+    Quest::GiveMatPureBlackAlpha(img_eql_alpha);
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql_alpha));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql_alpha));
+
+    // Compare two almost identical mats except one pixels value has been changed
+    img_eql.at<cv::Vec3b>(100, 100)[0] /= 2;
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql));
+
+}
+
+TEST_F(ImageSeqLibTest, TestMatEqualityFunctionWithAlpha) {
+    cv::Mat img = cv::imread("../../media/test_media/images/house_roof.jpg");
+    cv::Mat img_eql = cv::imread("../../media/test_media/images/house_roof.jpg");
+    Quest::GiveMatPureWhiteAlpha(img);
+    Quest::GiveMatPureWhiteAlpha(img_eql);
+
+    // Compare two identical mats
+    ASSERT_TRUE(Quest::MatEquals(img, img_eql));
+    ASSERT_FALSE(Quest::MatNotEquals(img, img_eql));
+
+    // Compare two almost identical mats except one pixels value has been changed
+    img_eql.at<cv::Vec3b>(100, 100)[3] /= 2;
+    ASSERT_FALSE(Quest::MatEquals(img, img_eql));
+    ASSERT_TRUE(Quest::MatNotEquals(img, img_eql));
+
+}
+
 TEST_F(ImageSeqLibTest, TestImageSeqEqualityOperators) {
     ASSERT_TRUE(dog_seq == dog_seq_identical);
     ASSERT_FALSE(dog_seq != dog_seq_identical);

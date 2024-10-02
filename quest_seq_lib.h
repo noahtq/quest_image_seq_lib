@@ -92,8 +92,8 @@ namespace Quest {
     };
 
     // Equality Operators
-    bool operator==(const cv::Mat& mat_1, const cv::Mat& mat_2);
-    bool operator!=(const cv::Mat& mat_1, const cv::Mat& mat_2);
+    bool MatEquals(const cv::Mat& mat_1, const cv::Mat& mat_2);
+    inline bool MatNotEquals(const cv::Mat& mat_1, const cv::Mat& mat_2) { return !(MatEquals(mat_1, mat_2)); }
     bool operator==(const ImageSeq& seq_1, const ImageSeq& seq_2);
     inline bool operator!=(const ImageSeq& seq_1, const ImageSeq& seq_2) { return !(seq_1 == seq_2); }
 

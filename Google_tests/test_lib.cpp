@@ -88,6 +88,9 @@ protected:
     std::filesystem::path proxy_expected_path =
         "../../media/test_media/videos/image_sequences/proxy_expected_output/proxy_output_%04d.png";
 
+    std::filesystem::path video_file_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/flower.mp4";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
@@ -207,6 +210,39 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccessSingularImage) {
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailSingularImageFileNotFound) {
     Quest::ImageSeq seq;
     ASSERT_EQ(seq.open("badpath/path.png"), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+}
+
+// Video Open Tests
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccessVideoFiles) {
+    // Check all supported video types
+    for (const std::string& video_extension : Quest::supported_video_extensions) {
+        video_file_path.replace_extension(video_extension);
+        Quest::ImageSeq seq;
+        ASSERT_EQ(seq.open(video_file_path), Quest::SeqErrorCodes::Success);
+        ASSERT_EQ(seq.get_input_path(), video_file_path);
+        ASSERT_EQ(seq.get_frame_count(), 125);
+        ASSERT_EQ(seq.get_width(), 720);
+        ASSERT_EQ(seq.get_height(), 1280);
+    }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailureVideoBadPath) {
+    Quest::ImageSeq seq;
+    ASSERT_EQ(seq.open("badpath/badpath.mp4"), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailureVideoUnsupportedExtension) {
+    Quest::ImageSeq seq;
+    video_file_path.replace_extension(".flv");
+    ASSERT_EQ(seq.open("badpath/badpath.mp4"), Quest::SeqErrorCodes::BadPath);
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);

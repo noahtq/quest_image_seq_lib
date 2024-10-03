@@ -12,7 +12,7 @@ namespace Quest {
     };
 
     inline const std::vector<std::string> supported_video_extensions = {
-        ".avi"
+        ".mp4", ".mov"
     };
 
     enum class SeqErrorCodes {Success = 0, BadPath, UnsupportedExtension};

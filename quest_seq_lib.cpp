@@ -2,6 +2,20 @@
 #include <regex>
 #include "quest_seq_lib.h"
 
+bool Quest::HasFramePadding(const std::filesystem::path& file_path) {
+    std::string path_string = file_path;
+    const std::regex padding_pattern(R"(%\d\dd)");
+    std::smatch matches, matches_2;
+    if (std::regex_search(path_string, matches, padding_pattern)) {
+        std::string suffix_string = matches.suffix();
+        if (std::regex_search(suffix_string, matches_2, padding_pattern)) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
 Quest::SeqPath::SeqPath(const std::filesystem::path& new_input_path) {
     std::string path_string = new_input_path;
     const std::regex padding_pattern(R"(%\d\dd)");
@@ -39,31 +53,56 @@ Quest::ImageSeq::ImageSeq(const ImageSeq& original) {
     Copy(original, *this);
 }
 
-
 Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
+    const std::string extension = new_input_path.extension();
     cv::VideoCapture input_video;
-    input_video.open(new_input_path, cv::CAP_IMAGES);
-    if (!input_video.isOpened()) {
-        return SeqErrorCodes::BadPath;
+    for (const std::string& image_extension : Quest::supported_image_extensions) {
+        if (extension == image_extension) {
+            // IMAGE SEQUENCE
+            if (Quest::HasFramePadding(new_input_path)) {
+                input_video.open(new_input_path, cv::CAP_IMAGES);
+                if (!input_video.isOpened()) {
+                    return SeqErrorCodes::BadPath;
+                }
+                frame_count = static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT));
+
+                // Handling edge case of image sequence with just one frame
+                if (frame_count == 1) {
+                    const SeqPath input_seq(new_input_path);
+                    frames.push_back(cv::imread(input_seq.outputPath()));
+                    GiveMatPureWhiteAlpha(frames[0]);
+                } else {
+                    // Regular image sequence with multiple frames
+                    frames.resize(frame_count);
+                    for(int i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
+                        input_video >> frames[i];
+                        if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
+                    }
+                }
+            } else {
+                // SINGULAR IMAGE - NO FRAME PADDING
+                cv::Mat img = cv::imread(new_input_path);
+                if (img.empty()) {
+                    return SeqErrorCodes::BadPath;
+                }
+
+                frame_count = 1;
+                GiveMatPureWhiteAlpha(img);
+                frames.push_back(img);
+            }
+            input_path = new_input_path;
+            width = frames[0].cols;
+            height = frames[0].rows;
+            return SeqErrorCodes::Success;
+        }
     }
-    input_path = new_input_path;
-    frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
-    // Send all of the frames in the video writer to a vector of matrices.
-    int i;
-    for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
-        input_video >> frames[i];
-        if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
+
+    for (const std::string& video_extension : Quest::supported_video_extensions) {
+        if (extension == video_extension) {
+            // TODO: add open video method once it has been written and return
+        }
     }
-    frame_count = i;
-    // CV VideoCapture won't work if it is only one frame, handling that edge case
-    if (frame_count == 1) {
-        const SeqPath input_seq(new_input_path);
-        frames[0] = cv::imread(input_seq.outputPath());
-        GiveMatPureWhiteAlpha(frames[0]);
-    }
-    width = frames[0].cols;
-    height = frames[0].rows;
-    return SeqErrorCodes::Success;
+    return Quest::SeqErrorCodes::UnsupportedExtension;
 }
 
 Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {

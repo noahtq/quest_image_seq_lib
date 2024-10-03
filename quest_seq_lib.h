@@ -11,6 +11,10 @@ namespace Quest {
         ".tiff", ".tif"
     };
 
+    inline const std::vector<std::string> supported_video_extensions = {
+        ".avi"
+    };
+
     enum class SeqErrorCodes {Success = 0, BadPath, UnsupportedExtension};
 
     class SeqException: public std::exception {
@@ -101,6 +105,7 @@ namespace Quest {
     void GiveMatAlpha(cv::Mat& image, const int& alpha_val);
     void GiveMatPureWhiteAlpha(cv::Mat& image);
     void GiveMatPureBlackAlpha(cv::Mat& image);
+    bool HasFramePadding(const std::filesystem::path& file_path);
 }
 
 #endif //QUEST_IMAGE_SEQ_LIB_LIBRARY_H

@@ -54,8 +54,13 @@ Quest::ImageSeq::ImageSeq(const ImageSeq& original) {
 }
 
 Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
+    enum class InputTypes { ImageNoPadding, ImagePadding, ImageSequence, Video, Unsupported };
     const std::string extension = new_input_path.extension();
     cv::VideoCapture input_video;
+    InputTypes type = InputTypes::Unsupported;
+
+    // Determine type of input - starting with images (image sequence, singular image, singular image with frame padding)
+    // Also return as BadPath if the file can't be found
     for (const std::string& image_extension : Quest::supported_image_extensions) {
         if (extension == image_extension) {
             // IMAGE SEQUENCE
@@ -68,41 +73,61 @@ Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_inpu
 
                 // Handling edge case of image sequence with just one frame
                 if (frame_count == 1) {
-                    const SeqPath input_seq(new_input_path);
-                    frames.push_back(cv::imread(input_seq.outputPath()));
-                    GiveMatPureWhiteAlpha(frames[0]);
+                    type = InputTypes::ImagePadding;
                 } else {
-                    // Regular image sequence with multiple frames
-                    frames.resize(frame_count);
-                    for(int i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
-                        input_video >> frames[i];
-                        if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
-                    }
+                    type = InputTypes::ImageSequence;
                 }
             } else {
-                // SINGULAR IMAGE - NO FRAME PADDING
-                cv::Mat img = cv::imread(new_input_path);
-                if (img.empty()) {
-                    return SeqErrorCodes::BadPath;
-                }
-
-                frame_count = 1;
-                GiveMatPureWhiteAlpha(img);
-                frames.push_back(img);
+                type = InputTypes::ImageNoPadding;
             }
-            input_path = new_input_path;
-            width = frames[0].cols;
-            height = frames[0].rows;
-            return SeqErrorCodes::Success;
         }
     }
 
+    // Check if it's a video container
     for (const std::string& video_extension : Quest::supported_video_extensions) {
         if (extension == video_extension) {
-            // TODO: add open video method once it has been written and return
+            input_video.open(new_input_path);
+            if (!input_video.isOpened()) {
+                return SeqErrorCodes::BadPath;
+            }
+            frame_count = static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT));
+            type = InputTypes::Video;
         }
     }
-    return Quest::SeqErrorCodes::UnsupportedExtension;
+
+    // Handle each type or return as unsupported if type can be determined
+    switch (type) {
+    case InputTypes::ImageNoPadding: {
+        // SINGULAR IMAGE - NO FRAME PADDING
+        cv::Mat img = cv::imread(new_input_path);
+        if (img.empty()) {
+            return SeqErrorCodes::BadPath;
+        }
+        frame_count = 1;
+        GiveMatPureWhiteAlpha(img);
+        frames.push_back(img);
+    } break;
+    case InputTypes::ImagePadding: {
+        const SeqPath input_seq(new_input_path);
+        frames.push_back(cv::imread(input_seq.outputPath()));
+        GiveMatPureWhiteAlpha(frames[0]);
+    } break;
+    case InputTypes::ImageSequence: case InputTypes::Video: {
+        frames.resize(frame_count);
+        for(int i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
+            input_video >> frames[i];
+            if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
+        }
+    } break;
+    default:
+        return Quest::SeqErrorCodes::UnsupportedExtension;
+    }
+
+    input_path = new_input_path;
+    width = frames[0].cols;
+    height = frames[0].rows;
+
+    return Quest::SeqErrorCodes::Success;
 }
 
 Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {

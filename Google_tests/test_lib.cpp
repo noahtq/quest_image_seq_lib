@@ -96,6 +96,9 @@ protected:
     std::filesystem::path video_file_path =
         "../../media/test_media/videos/video_files/various_video_fileformats/flower.mp4";
 
+    std::filesystem::path high_fps_file_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/high_frame_rate.mp4";
+
     std::filesystem::path video_output_path =
         "../../media/test_media/videos/video_files/various_video_fileformats/exported_videos/flower_exported.mp4";
 
@@ -245,8 +248,12 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccessVideoFiles) {
         ASSERT_EQ(seq.get_frame_count(), 125);
         ASSERT_EQ(seq.get_width(), 720);
         ASSERT_EQ(seq.get_height(), 1280);
-        ASSERT_EQ(seq.get_fps(), 25);
+        ASSERT_NEAR(seq.get_fps(), 25, 0.1);
     }
+
+    Quest::ImageSeq high_fps;
+    high_fps.open(high_fps_file_path);
+    ASSERT_NEAR(high_fps.get_fps(), 119.88, 0.1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailureVideoBadPath) {
@@ -336,6 +343,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccessVideoFile) {
         ASSERT_EQ(open_seq.get_frame_count(), 125);
         ASSERT_EQ(open_seq.get_width(), 720);
         ASSERT_EQ(open_seq.get_height(), 1280);
+        ASSERT_NEAR(open_seq.get_fps(), 25, 0.1);
     }
 }
 

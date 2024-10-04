@@ -6,7 +6,7 @@
 
 namespace Quest {
     // Default fps to use if writing a video but no fps was given in metadata
-    constexpr int default_fps = 24;
+    constexpr double default_fps = 24;
 
     inline const std::vector<std::string> supported_image_extensions = {
         ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
@@ -59,7 +59,7 @@ namespace Quest {
         int frame_count = -1;
         int width = -1;
         int height = -1;
-        int fps = -1;
+        double fps = -1;
 
     public:
         // Constructors
@@ -74,7 +74,7 @@ namespace Quest {
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
         [[nodiscard]] int get_width() const { return width; }
         [[nodiscard]] int get_height() const { return height; }
-        [[nodiscard]] int get_fps() const { return fps; }
+        [[nodiscard]] double get_fps() const { return fps; }
 
         // Iterators
         std::vector<cv::Mat>::iterator begin() { return frames.begin(); }

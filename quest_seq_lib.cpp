@@ -124,7 +124,7 @@ Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_inpu
     }
 
     if (type == InputTypes::Video) {
-        fps = cv::CAP_PROP_FPS;
+        fps = input_video.get(cv::CAP_PROP_FPS);
     }
 
     input_path = new_input_path;
@@ -159,7 +159,7 @@ Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_ou
     for (const std::string& video_extension : supported_video_extensions) {
         if (extension == video_extension) {
             cv::Size frame_size(width, height);
-            const int render_fps = fps == -1 ? default_fps : fps;
+            const double render_fps = fps == -1 ? default_fps : fps;
             std::string codec;
             if (extension == ".mp4" || extension == ".mov") codec = "H264";
 

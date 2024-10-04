@@ -84,6 +84,7 @@ namespace Quest {
 
         // Operators
         cv::Mat& operator[](const int& index);
+        const cv::Mat& operator[] (const int& index) const;
         ImageSeq& operator=(const ImageSeq& original);
 
         // Image IO

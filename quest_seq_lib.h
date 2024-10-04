@@ -56,7 +56,8 @@ namespace Quest {
         int frame_count = -1;
         int width = -1;
         int height = -1;
-
+        int fps = -1;
+    
     public:
         // Constructors
         ImageSeq() = default;
@@ -70,6 +71,7 @@ namespace Quest {
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
         [[nodiscard]] int get_width() const { return width; }
         [[nodiscard]] int get_height() const { return height; }
+        [[nodiscard]] int get_fps() const { return fps; }
 
         // Iterators
         std::vector<cv::Mat>::iterator begin() { return frames.begin(); }

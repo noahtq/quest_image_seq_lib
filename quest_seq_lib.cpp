@@ -123,6 +123,11 @@ Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_inpu
         return Quest::SeqErrorCodes::UnsupportedExtension;
     }
 
+    if (type == InputTypes::Video) {
+        fps = cv::CAP_PROP_FPS;
+        fourcc = cv::CAP_PROP_FOURCC;
+    }
+
     input_path = new_input_path;
     width = frames[0].cols;
     height = frames[0].rows;
@@ -151,6 +156,15 @@ Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_ou
             return SeqErrorCodes::Success;
         }
     }
+
+    // for (const std::string& video_extension : supported_video_extensions) {
+    //     if (extension == video_extension) {
+    //         cv::Size frame_size(width, height);
+    //         int fps = 30; //TODO: replace with non-hardcoded value
+    //
+    //     }
+    // }
+
     return SeqErrorCodes::UnsupportedExtension;
 }
 

@@ -146,12 +146,20 @@ Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_ou
     const std::string extension = new_output_path.extension();
     for (const std::string& valid : supported_image_extensions) {
         if (extension == valid) {
-            Quest::SeqPath output_seq(new_output_path);
-            output_path = new_output_path;
-            for (const cv::Mat& frame : frames) {
-                std::filesystem::path frame_output_path = output_seq.outputIncrement();
-                cv::imwrite(frame_output_path, frame);
+            if (HasFramePadding(new_output_path)) {
+                Quest::SeqPath output_seq(new_output_path);
+                output_path = new_output_path;
+                for (const cv::Mat& frame : frames) {
+                    std::filesystem::path frame_output_path = output_seq.outputIncrement();
+                    cv::imwrite(frame_output_path, frame);
+                }
+                return SeqErrorCodes::Success;
             }
+            if (frame_count > 1) {
+                return SeqErrorCodes::BadPath;
+            }
+            output_path = new_output_path;
+            cv::imwrite(new_output_path, frames[0]);
             return SeqErrorCodes::Success;
         }
     }

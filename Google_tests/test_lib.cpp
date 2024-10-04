@@ -45,9 +45,9 @@ protected:
             std::filesystem::remove_all(entry.path());
         }
 
-        // for (const auto& entry : std::filesystem::directory_iterator(video_output_path.parent_path())) {
-        //     std::filesystem::remove_all(entry.path());
-        // }
+        for (const auto& entry : std::filesystem::directory_iterator(video_output_path.parent_path())) {
+            std::filesystem::remove_all(entry.path());
+        }
     }
 
     std::filesystem::path small_dog_seq_path =
@@ -101,6 +101,9 @@ protected:
 
     std::filesystem::path video_output_path =
         "../../media/test_media/videos/video_files/various_video_fileformats/exported_videos/flower_exported.mp4";
+
+    std::filesystem::path single_image_output_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/exported_videos/house.png";
 
     cv::Mat new_frame;
 
@@ -354,6 +357,25 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderFailureVideoUnsupportedExtension) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderFailureVideoNonExistantDirectory) {
     ASSERT_EQ(video_seq.render("bad_dir/video.mp4"), Quest::SeqErrorCodes::BadPath);
+}
+
+// Single image rendering without frame padding
+TEST_F(ImageSeqLibTest, TestImageSeqRenderWithoutFramePaddingOneImage) {
+    Quest::ImageSeq pic_seq;
+    pic_seq.open(house_picture_path);
+
+    ASSERT_EQ(pic_seq.render(single_image_output_path), Quest::SeqErrorCodes::Success);
+    Quest::ImageSeq open_seq;
+    open_seq.open(pic_seq.get_output_path());
+    ASSERT_EQ(open_seq.get_frame_count(), 1);
+    ASSERT_EQ(open_seq.get_width(), 640);
+    ASSERT_EQ(open_seq.get_height(), 427);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderWithoutFramePaddingTooManyFrames) {
+    ASSERT_EQ(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_dog_001.png"),
+        Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(dog_seq.get_output_path(), "");
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqIterators) {

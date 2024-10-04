@@ -5,10 +5,17 @@
 #include <opencv2/opencv.hpp>
 
 namespace Quest {
+    // Default fps to use if writing a video but no fps was given in metadata
+    constexpr double default_fps = 24;
+
     inline const std::vector<std::string> supported_image_extensions = {
         ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
         ".webp", ".sr", ".ras",
         ".tiff", ".tif"
+    };
+
+    inline const std::vector<std::string> supported_video_extensions = {
+        ".mp4", ".mov"
     };
 
     enum class SeqErrorCodes {Success = 0, BadPath, UnsupportedExtension};
@@ -52,6 +59,7 @@ namespace Quest {
         int frame_count = -1;
         int width = -1;
         int height = -1;
+        double fps = -1;
 
     public:
         // Constructors
@@ -66,6 +74,7 @@ namespace Quest {
         void set_frame(const int& i, const cv::Mat& new_frame) { frames[i] = new_frame; }
         [[nodiscard]] int get_width() const { return width; }
         [[nodiscard]] int get_height() const { return height; }
+        [[nodiscard]] double get_fps() const { return fps; }
 
         // Iterators
         std::vector<cv::Mat>::iterator begin() { return frames.begin(); }
@@ -101,6 +110,7 @@ namespace Quest {
     void GiveMatAlpha(cv::Mat& image, const int& alpha_val);
     void GiveMatPureWhiteAlpha(cv::Mat& image);
     void GiveMatPureBlackAlpha(cv::Mat& image);
+    bool HasFramePadding(const std::filesystem::path& file_path);
 }
 
 #endif //QUEST_IMAGE_SEQ_LIB_LIBRARY_H

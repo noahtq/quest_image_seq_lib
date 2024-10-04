@@ -18,6 +18,7 @@ protected:
         new_frame = cv::imread(house_picture_path);
         test_seq = new Quest::SeqPath("small_dog_%04d.png");
         wave_seq.open(wave_path);
+        video_seq.open(video_file_path);
     }
 
     void TearDown() override {
@@ -41,6 +42,10 @@ protected:
 
         // Remove image extension comparison images
         for (const auto& entry : std::filesystem::directory_iterator(dandelion_output_path.parent_path())) {
+            std::filesystem::remove_all(entry.path());
+        }
+
+        for (const auto& entry : std::filesystem::directory_iterator(video_output_path.parent_path())) {
             std::filesystem::remove_all(entry.path());
         }
     }
@@ -88,6 +93,18 @@ protected:
     std::filesystem::path proxy_expected_path =
         "../../media/test_media/videos/image_sequences/proxy_expected_output/proxy_output_%04d.png";
 
+    std::filesystem::path video_file_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/flower.mp4";
+
+    std::filesystem::path high_fps_file_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/high_frame_rate.mp4";
+
+    std::filesystem::path video_output_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/exported_videos/flower_exported.mp4";
+
+    std::filesystem::path single_image_output_path =
+        "../../media/test_media/videos/video_files/various_video_fileformats/exported_videos/house.png";
+
     cv::Mat new_frame;
 
     Quest::ImageSeq dog_seq;
@@ -95,6 +112,7 @@ protected:
     Quest::ImageSeq dog_seq_identical;
     Quest::ImageSeq dog_blurred;
     Quest::ImageSeq wave_seq;
+    Quest::ImageSeq video_seq;
 
     Quest::SeqPath *output_seq = nullptr;
     Quest::SeqPath *test_seq = nullptr;
@@ -109,6 +127,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqBasicGetters) {
     ASSERT_EQ(dog_seq.get_frame_count(), 187);
     ASSERT_EQ(dog_seq.get_width(), 1080);
     ASSERT_EQ(dog_seq.get_height(), 1920);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
 }
 
 // Test the frame getter. A bit more complex as it should be returning a copy
@@ -142,8 +161,10 @@ TEST_F(ImageSeqLibTest, TestImageSeqDefaultConstructor) {
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
     ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
 }
 
+// Image Sequence Open Tests
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     Quest::ImageSeq seq;
     ASSERT_EQ(seq.open(small_dog_seq_path), Quest::SeqErrorCodes::Success);
@@ -151,6 +172,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccess) {
     ASSERT_EQ(seq.get_frame_count(), 187);
     ASSERT_EQ(dog_seq.get_width(), 1080);
     ASSERT_EQ(dog_seq.get_height(), 1920);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
@@ -160,6 +182,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailDirectoryDoesntExist) {
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
     ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
@@ -169,6 +192,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailNoFramePadding) {
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
     ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
@@ -177,7 +201,83 @@ TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailFilenameDoesntExist) {
     ASSERT_EQ(seq.get_input_path(), "");
     ASSERT_EQ(seq.get_frame_count(), -1);
     ASSERT_EQ(seq.get_width(), -1);
-    ASSERT_EQ(seq.get_height(), -1);;
+    ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailUnsupportedExtension) {
+    Quest::ImageSeq seq;
+    ASSERT_EQ(seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::UnsupportedExtension);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
+}
+
+// Image Sequence Singular Image (No frame padding) tests
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccessSingularImage) {
+    Quest::ImageSeq seq;
+    ASSERT_EQ(seq.open(house_picture_path), Quest::SeqErrorCodes::Success);
+    ASSERT_EQ(seq.get_frame_count(), 1);
+    ASSERT_EQ(seq.get_width(), 640);
+    ASSERT_EQ(seq.get_height(), 427);
+    ASSERT_EQ(seq.get_input_path(), house_picture_path);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
+
+    cv::Mat house_img = cv::imread(house_picture_path);
+    Quest::GiveMatPureWhiteAlpha(house_img);
+    ASSERT_TRUE(Quest::MatEquals(seq.get_frame(0), house_img));
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailSingularImageFileNotFound) {
+    Quest::ImageSeq seq;
+    ASSERT_EQ(seq.open("badpath/path.png"), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(dog_seq.get_fps(), -1);
+}
+
+// Video Open Tests
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodSuccessVideoFiles) {
+    // Check all supported video types
+    for (const std::string& video_extension : Quest::supported_video_extensions) {
+        video_file_path.replace_extension(video_extension);
+        Quest::ImageSeq seq;
+        ASSERT_EQ(seq.open(video_file_path), Quest::SeqErrorCodes::Success);
+        ASSERT_EQ(seq.get_input_path(), video_file_path);
+        ASSERT_EQ(seq.get_frame_count(), 125);
+        ASSERT_EQ(seq.get_width(), 720);
+        ASSERT_EQ(seq.get_height(), 1280);
+        ASSERT_NEAR(seq.get_fps(), 25, 0.1);
+    }
+
+    Quest::ImageSeq high_fps;
+    high_fps.open(high_fps_file_path);
+    ASSERT_NEAR(high_fps.get_fps(), 119.88, 0.1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailureVideoBadPath) {
+    Quest::ImageSeq seq;
+    ASSERT_EQ(seq.open("badpath/badpath.mp4"), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(seq.get_fps(), -1);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqOpenMethodFailureVideoUnsupportedExtension) {
+    Quest::ImageSeq seq;
+    video_file_path.replace_extension(".flv");
+    ASSERT_EQ(seq.open("badpath/badpath.mp4"), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(seq.get_input_path(), "");
+    ASSERT_EQ(seq.get_frame_count(), -1);
+    ASSERT_EQ(seq.get_width(), -1);
+    ASSERT_EQ(seq.get_height(), -1);
+    ASSERT_EQ(seq.get_fps(), -1);
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorGetSuccess) {
@@ -203,6 +303,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSubscriptOperatorFailOutOfRange) {
     ASSERT_THROW(dog_seq[200], std::out_of_range);
 }
 
+// With Image Sequence
 TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccess) {
     ASSERT_EQ(dog_seq.render(small_dog_output_path), Quest::SeqErrorCodes::Success);
     ASSERT_EQ(dog_seq.get_output_path(), small_dog_output_path);
@@ -229,6 +330,52 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderNonExistentDirectory) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
     ASSERT_EQ(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_cat_001_%04d.obj"), Quest::SeqErrorCodes::UnsupportedExtension);
+}
+
+// Video file rendering
+TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccessVideoFile) {
+    for (cv::Mat& frame : video_seq) {
+        GaussianBlur(frame, frame, cv::Size(25, 25), 0, 0, cv::BORDER_CONSTANT);
+    }
+    for (const std::string& video_extension : Quest::supported_video_extensions) {
+        video_output_path.replace_extension(video_extension);
+        ASSERT_EQ(video_seq.render(video_output_path), Quest::SeqErrorCodes::Success);
+        ASSERT_EQ(video_seq.get_output_path(), video_output_path);
+        Quest::ImageSeq open_seq;
+        open_seq.open(video_seq.get_output_path());
+        ASSERT_EQ(open_seq.get_frame_count(), 125);
+        ASSERT_EQ(open_seq.get_width(), 720);
+        ASSERT_EQ(open_seq.get_height(), 1280);
+        ASSERT_NEAR(open_seq.get_fps(), 25, 0.1);
+    }
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderFailureVideoUnsupportedExtension) {
+    video_output_path.replace_extension(".flv");
+    ASSERT_EQ(video_seq.render(video_output_path), Quest::SeqErrorCodes::UnsupportedExtension);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderFailureVideoNonExistantDirectory) {
+    ASSERT_EQ(video_seq.render("bad_dir/video.mp4"), Quest::SeqErrorCodes::BadPath);
+}
+
+// Single image rendering without frame padding
+TEST_F(ImageSeqLibTest, TestImageSeqRenderWithoutFramePaddingOneImage) {
+    Quest::ImageSeq pic_seq;
+    pic_seq.open(house_picture_path);
+
+    ASSERT_EQ(pic_seq.render(single_image_output_path), Quest::SeqErrorCodes::Success);
+    Quest::ImageSeq open_seq;
+    open_seq.open(pic_seq.get_output_path());
+    ASSERT_EQ(open_seq.get_frame_count(), 1);
+    ASSERT_EQ(open_seq.get_width(), 640);
+    ASSERT_EQ(open_seq.get_height(), 427);
+}
+
+TEST_F(ImageSeqLibTest, TestImageSeqRenderWithoutFramePaddingTooManyFrames) {
+    ASSERT_EQ(dog_seq.render("../../media/test_media/videos/image_sequences/small_dog_001/small_dog_001.png"),
+        Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(dog_seq.get_output_path(), "");
 }
 
 TEST_F(ImageSeqLibTest, TestImageSeqIterators) {
@@ -261,7 +408,7 @@ TEST_F(ImageSeqLibTest, TestImageSeqSupportedImageExtensions) {
 
 TEST_F(ImageSeqLibTest, TestImageSeqHandlesUnsupportedImageExtensions) {
     Quest::ImageSeq unsupported_seq;
-    ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::BadPath);
+    ASSERT_EQ(unsupported_seq.open(dandelion_unsupported_path), Quest::SeqErrorCodes::UnsupportedExtension);
 }
 
 TEST_F(ImageSeqLibTest, TestMatEqualityFunctionWrongType) {
@@ -558,4 +705,13 @@ TEST_F(ImageSeqLibTest, TestGiveMatBlackAlphaSuccess) {
     cv::Mat weird_channels[4];
     cv::split(weird_alpha, weird_channels);
     ASSERT_EQ(sum(weird_channels[3] != just_alpha), cv::Scalar(0));
+}
+
+TEST_F(ImageSeqLibTest, TestHasFramePaddingHelperFunction) {
+    ASSERT_FALSE(Quest::HasFramePadding("no_padding.png"));
+    ASSERT_FALSE(Quest::HasFramePadding("folder/no_padding.mov"));
+    ASSERT_FALSE(Quest::HasFramePadding("folder/folder/too_much_padding_%04d_%06d.png"));
+    ASSERT_TRUE(Quest::HasFramePadding("padding_%04d.png"));
+    ASSERT_TRUE(Quest::HasFramePadding("folder/padding_%01d.tiff"));
+    ASSERT_TRUE(Quest::HasFramePadding("folder/padding_%33d.png"));
 }

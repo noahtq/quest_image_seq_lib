@@ -2,6 +2,20 @@
 #include <regex>
 #include "quest_seq_lib.h"
 
+bool Quest::HasFramePadding(const std::filesystem::path& file_path) {
+    std::string path_string = file_path;
+    const std::regex padding_pattern(R"(%\d\dd)");
+    std::smatch matches, matches_2;
+    if (std::regex_search(path_string, matches, padding_pattern)) {
+        std::string suffix_string = matches.suffix();
+        if (std::regex_search(suffix_string, matches_2, padding_pattern)) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
 Quest::SeqPath::SeqPath(const std::filesystem::path& new_input_path) {
     std::string path_string = new_input_path;
     const std::regex padding_pattern(R"(%\d\dd)");
@@ -39,31 +53,85 @@ Quest::ImageSeq::ImageSeq(const ImageSeq& original) {
     Copy(original, *this);
 }
 
-
 Quest::SeqErrorCodes Quest::ImageSeq::open(const std::filesystem::path& new_input_path) {
+    enum class InputTypes { ImageNoPadding, ImagePadding, ImageSequence, Video, Unsupported };
+    const std::string extension = new_input_path.extension();
     cv::VideoCapture input_video;
-    input_video.open(new_input_path, cv::CAP_IMAGES);
-    if (!input_video.isOpened()) {
-        return SeqErrorCodes::BadPath;
+    InputTypes type = InputTypes::Unsupported;
+
+    // Determine type of input - starting with images (image sequence, singular image, singular image with frame padding)
+    // Also return as BadPath if the file can't be found
+    for (const std::string& image_extension : Quest::supported_image_extensions) {
+        if (extension == image_extension) {
+            // IMAGE SEQUENCE
+            if (Quest::HasFramePadding(new_input_path)) {
+                input_video.open(new_input_path, cv::CAP_IMAGES);
+                if (!input_video.isOpened()) {
+                    return SeqErrorCodes::BadPath;
+                }
+                frame_count = static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT));
+
+                // Handling edge case of image sequence with just one frame
+                if (frame_count == 1) {
+                    type = InputTypes::ImagePadding;
+                } else {
+                    type = InputTypes::ImageSequence;
+                }
+            } else {
+                type = InputTypes::ImageNoPadding;
+            }
+        }
     }
-    input_path = new_input_path;
-    frames.resize(static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT)));
-    // Send all of the frames in the video writer to a vector of matrices.
-    int i;
-    for(i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
-        input_video >> frames[i];
-        if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
+
+    // Check if it's a video container
+    for (const std::string& video_extension : Quest::supported_video_extensions) {
+        if (extension == video_extension) {
+            input_video.open(new_input_path);
+            if (!input_video.isOpened()) {
+                return SeqErrorCodes::BadPath;
+            }
+            frame_count = static_cast<int>(input_video.get(cv::CAP_PROP_FRAME_COUNT));
+            type = InputTypes::Video;
+        }
     }
-    frame_count = i;
-    // CV VideoCapture won't work if it is only one frame, handling that edge case
-    if (frame_count == 1) {
+
+    // Handle each type or return as unsupported if type can be determined
+    switch (type) {
+    case InputTypes::ImageNoPadding: {
+        // SINGULAR IMAGE - NO FRAME PADDING
+        cv::Mat img = cv::imread(new_input_path);
+        if (img.empty()) {
+            return SeqErrorCodes::BadPath;
+        }
+        frame_count = 1;
+        GiveMatPureWhiteAlpha(img);
+        frames.push_back(img);
+    } break;
+    case InputTypes::ImagePadding: {
         const SeqPath input_seq(new_input_path);
-        frames[0] = cv::imread(input_seq.outputPath());
+        frames.push_back(cv::imread(input_seq.outputPath()));
         GiveMatPureWhiteAlpha(frames[0]);
+    } break;
+    case InputTypes::ImageSequence: case InputTypes::Video: {
+        frames.resize(frame_count);
+        for(int i = 0; i < input_video.get(cv::CAP_PROP_FRAME_COUNT); i++) {
+            input_video >> frames[i];
+            if (frames[i].rows > 0 && frames[i].cols > 0) GiveMatPureWhiteAlpha(frames[i]);
+        }
+    } break;
+    default:
+        return Quest::SeqErrorCodes::UnsupportedExtension;
     }
+
+    if (type == InputTypes::Video) {
+        fps = input_video.get(cv::CAP_PROP_FPS);
+    }
+
+    input_path = new_input_path;
     width = frames[0].cols;
     height = frames[0].rows;
-    return SeqErrorCodes::Success;
+
+    return Quest::SeqErrorCodes::Success;
 }
 
 Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_output_path) {
@@ -78,15 +146,44 @@ Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_ou
     const std::string extension = new_output_path.extension();
     for (const std::string& valid : supported_image_extensions) {
         if (extension == valid) {
-            Quest::SeqPath output_seq(new_output_path);
-            output_path = new_output_path;
-            for (const cv::Mat& frame : frames) {
-                std::filesystem::path frame_output_path = output_seq.outputIncrement();
-                cv::imwrite(frame_output_path, frame);
+            if (HasFramePadding(new_output_path)) {
+                Quest::SeqPath output_seq(new_output_path);
+                output_path = new_output_path;
+                for (const cv::Mat& frame : frames) {
+                    std::filesystem::path frame_output_path = output_seq.outputIncrement();
+                    cv::imwrite(frame_output_path, frame);
+                }
+                return SeqErrorCodes::Success;
             }
+            if (frame_count > 1) {
+                return SeqErrorCodes::BadPath;
+            }
+            output_path = new_output_path;
+            cv::imwrite(new_output_path, frames[0]);
             return SeqErrorCodes::Success;
         }
     }
+
+    for (const std::string& video_extension : supported_video_extensions) {
+        if (extension == video_extension) {
+            cv::Size frame_size(width, height);
+            const double render_fps = fps == -1 ? default_fps : fps;
+            std::string codec;
+            if (extension == ".mp4" || extension == ".mov") codec = "H264";
+
+            cv::VideoWriter output_writer(new_output_path,
+                cv::VideoWriter::fourcc(codec[0], codec[1], codec[2], codec[3]),
+                render_fps, frame_size);
+
+            for (const cv::Mat& frame : frames) {
+                output_writer.write(frame);
+            }
+
+            output_path = new_output_path;
+            return SeqErrorCodes::Success;
+        }
+    }
+
     return SeqErrorCodes::UnsupportedExtension;
 }
 

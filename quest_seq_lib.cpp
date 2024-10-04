@@ -187,7 +187,14 @@ Quest::SeqErrorCodes Quest::ImageSeq::render(const std::filesystem::path& new_ou
     return SeqErrorCodes::UnsupportedExtension;
 }
 
-cv::Mat& Quest::ImageSeq::operator[](const int& index) {
+cv::Mat& Quest::ImageSeq::operator[] (const int& index) {
+    if (index >= frames.size() || index < 0) {
+        throw std::out_of_range("Attempting to access a frame in ImageSeq object that doesn't exist");
+    }
+    return frames[index];
+}
+
+const cv::Mat& Quest::ImageSeq::operator[] (const int& index) const {
     if (index >= frames.size() || index < 0) {
         throw std::out_of_range("Attempting to access a frame in ImageSeq object that doesn't exist");
     }
@@ -274,7 +281,7 @@ bool Quest::operator==(const ImageSeq& seq_1, const ImageSeq& seq_2) {
     if (seq_1.get_frame_count() != seq_2.get_frame_count()) return false;
     if (seq_1.get_height() != seq_2.get_height() || seq_1.get_width() != seq_2.get_width()) return false;
     for (int i = 0; i < seq_1.get_frame_count(); i++) {
-        if (Quest::MatNotEquals(seq_1.get_frame(i), seq_2.get_frame(i))) return false;
+        if (Quest::MatNotEquals(seq_1[i], seq_2[i])) return false;
     }
     return true;
 }

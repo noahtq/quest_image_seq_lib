@@ -7,9 +7,9 @@ image sequences.
 This library uses the OpenCV Mat object to represent images so it is easy to work with image sequences
 but you also retain all of the functionality that is offered by OpenCV.
 
-## Current Version 0.0.3
+## Current Version 0.1.0
 ### Download
-[Apple Silicon M2 Static Library - 0.0.3](versions/lib_quest_image_sequence_0_0_3.tar)
+[Apple Silicon M2 Static Library - 0.1.0](versions/lib_quest_image_sequence_0_1_0.tar)
 
 ## Tech Stack
 - C++ and CMake

@@ -36,3 +36,25 @@ between all of the iterations to get the benchmark times.
 **Rendering a 990 frame 1280x720 png image sequence**
 - Time (for all operations): 8.65 seconds
 - CPU Time: 32.2 seconds
+
+## Supported Image/Video File Types
+### Image
+- .png
+- .jpg
+- .jpeg
+- .jpe
+- .bmp
+- .dib
+- .jp2
+- .webp
+- .sr
+- .ras
+- .tiff
+- .tif
+    
+*Support for .exr and .dpx images is planned and will be coming in a future update*
+
+### Video
+**Note: These are the currently supported video file formats and codecs but please note that if your system does not have the appropriate codec installed or does not support a specific file type, then that option will not work for you.**
+- MP4 using H264 Codec
+- MOV using H264 Codec

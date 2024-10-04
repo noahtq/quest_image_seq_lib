@@ -45,9 +45,9 @@ protected:
             std::filesystem::remove_all(entry.path());
         }
 
-        for (const auto& entry : std::filesystem::directory_iterator(video_output_path.parent_path())) {
-            std::filesystem::remove_all(entry.path());
-        }
+        // for (const auto& entry : std::filesystem::directory_iterator(video_output_path.parent_path())) {
+        //     std::filesystem::remove_all(entry.path());
+        // }
     }
 
     std::filesystem::path small_dog_seq_path =
@@ -324,6 +324,9 @@ TEST_F(ImageSeqLibTest, TestImageSeqRenderUnsupportedExtension) {
 
 // Video file rendering
 TEST_F(ImageSeqLibTest, TestImageSeqRenderSuccessVideoFile) {
+    for (cv::Mat& frame : video_seq) {
+        GaussianBlur(frame, frame, cv::Size(25, 25), 0, 0, cv::BORDER_CONSTANT);
+    }
     for (const std::string& video_extension : Quest::supported_video_extensions) {
         video_output_path.replace_extension(video_extension);
         ASSERT_EQ(video_seq.render(video_output_path), Quest::SeqErrorCodes::Success);

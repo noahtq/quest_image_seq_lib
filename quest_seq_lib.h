@@ -5,6 +5,9 @@
 #include <opencv2/opencv.hpp>
 
 namespace Quest {
+    // Default fps to use if writing a video but no fps was given in metadata
+    constexpr int default_fps = 24;
+
     inline const std::vector<std::string> supported_image_extensions = {
         ".png", ".jpg", ".jpeg", ".jpe", ".bmp", ".dib", ".jp2",
         ".webp", ".sr", ".ras",
@@ -57,7 +60,7 @@ namespace Quest {
         int width = -1;
         int height = -1;
         int fps = -1;
-    
+
     public:
         // Constructors
         ImageSeq() = default;

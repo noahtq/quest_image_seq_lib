@@ -5,7 +5,9 @@ By far the most common way to work with videos in the commercial VFX industry is
 image sequences.  
   
 This library uses the OpenCV Mat object to represent images so it is easy to work with image sequences
-but you also retain all of the functionality that is offered by OpenCV.
+but you also retain all of the functionality that is offered by OpenCV.  
+
+As of version 0.1.0 the ImageSeq object automatically detects, opens, and works with multi frame or single frame image sequences (example_%04d.png), singular images (example.png), and video files (example.mov).
 
 ## Current Version 0.1.0
 ### Download
